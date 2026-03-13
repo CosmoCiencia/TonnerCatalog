@@ -1,0 +1,92 @@
+%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/Resources <<
+/Font <<
+/F1 4 0 R
+>>
+>>
+/MediaBox [0 0 612 792]
+/Contents 5 0 R
+>>
+endobj
+4 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica-Bold
+>>
+endobj
+5 0 obj
+<<
+/Length 500
+>>
+stream
+BT
+/F1 24 Tf
+50 750 Td
+(PINTURAS TONNER) Tj
+0 -40 Td
+/F1 18 Tf
+(FICHA TECNICA DEL PRODUCTO) Tj
+0 -60 Td
+/F1 14 Tf
+(Producto: [Nombre del Producto]) Tj
+0 -30 Td
+(Categoria: [Categoria]) Tj
+0 -30 Td
+(Linea: [Linea del Producto]) Tj
+0 -50 Td
+/F1 12 Tf
+(DESCRIPCION:) Tj
+0 -25 Td
+(Esta ficha tecnica contiene informacion detallada) Tj
+0 -20 Td
+(sobre el producto seleccionado.) Tj
+0 -50 Td
+(RENDIMIENTO: [XX m2 por galon]) Tj
+0 -25 Td
+(ACABADO: [Tipo de acabado]) Tj
+0 -25 Td
+(PRESENTACIONES: [Disponibles]) Tj
+0 -50 Td
+(COLORES DISPONIBLES:) Tj
+0 -25 Td
+([Paleta de colores]) Tj
+0 -80 Td
+/F1 10 Tf
+(Pinturas Tonner - 40 anos pintando Colombia) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000261 00000 n
+0000000349 00000 n
+trailer
+<<
+/Size 6
+/Root 1 0 R
+>>
+startxref
+900
+%%EOF
