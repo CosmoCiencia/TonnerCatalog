@@ -115,6 +115,11 @@ function App() {
             setActiveLine(line);
             setView('catalog');
           }}
+          onRecommendProduct={(product) => {
+            setActiveLine(product.line as TonnerLineKey);
+            setSelectedProduct(product);
+            setView('catalog');
+          }}
           onOpenCatalog={() => setView('catalog')}
           onOpenDistributors={() => setView('distributors')}
         />

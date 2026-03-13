@@ -107,6 +107,7 @@
 │   │   │   ├── HomeScreen.tsx
 │   │   │   └── types.ts
 │   │   ├── onboarding
+│   │   │   ├── location.ts
 │   │   │   ├── RoleScreen.tsx
 │   │   │   └── userTypes.ts
 │   │   └── purchase
@@ -119,4 +120,4 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-15 directories, 105 files
+15 directories, 106 files

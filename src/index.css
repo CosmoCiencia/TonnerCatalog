@@ -224,10 +224,19 @@ h4 {
 }
 
 .home-panel-distribuidor {
-  max-width: 72rem;
+  max-width: 66rem;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(123, 43, 147, 0.08)),
     rgba(255, 255, 255, 0.04);
+}
+
+@media (max-width: 1024px) {
+  .home-panel-cliente,
+  .home-panel-contratista,
+  .home-panel-distribuidor,
+  .role-panel {
+    max-width: 34rem;
+  }
 }
 
 .home-fade-up {
@@ -747,6 +756,12 @@ h4 {
 }
 
 @media (max-width: 640px) {
+  .home-screen,
+  .role-screen {
+    padding-top: 1.4rem;
+    padding-bottom: 5.75rem;
+  }
+
   .role-grid-overlay {
     background-size: 24px 24px;
   }
@@ -767,6 +782,7 @@ h4 {
   }
 
   .role-panel {
+    padding: 1rem 0.9rem 0.95rem;
     box-shadow:
       0 20px 44px rgba(4, 16, 44, 0.24),
       0 0 24px rgba(125, 157, 255, 0.1),
@@ -786,5 +802,22 @@ h4 {
     box-shadow:
       0 10px 24px rgba(8, 20, 52, 0.14),
       inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .home-panel {
+    padding: 1rem 0.9rem 0.95rem;
+    border-radius: 1.5rem;
+  }
+
+  .home-card {
+    min-height: 6.25rem;
+    box-shadow:
+      0 8px 20px rgba(10, 26, 69, 0.12),
+      0 0 0 1px rgba(255, 255, 255, 0.28) inset;
+  }
+
+  .home-card-icon {
+    height: 2.85rem;
+    width: 2.85rem;
   }
 }
