@@ -92,17 +92,17 @@ export default function PurchasePage({
     <main className="mx-auto max-w-7xl px-4 py-6 pb-28 md:px-6 md:py-16 md:pb-16">
       <section className="rounded-[28px] bg-white p-5 shadow-[0_30px_80px_rgba(0,0,0,0.18)] md:rounded-3xl md:p-10">
         <header className="mb-8">
-          <div className="mb-4 flex flex-wrap gap-3">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
               onClick={onBackToCatalog}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:w-auto"
             >
               ← Regresar al catálogo
             </button>
 
             <button
               onClick={onContinueShopping}
-              className="inline-flex items-center gap-2 rounded-full border border-tonner-blue/20 bg-tonner-blue/5 px-4 py-2 text-sm font-semibold text-tonner-blue transition hover:bg-tonner-blue/10"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-tonner-blue/20 bg-tonner-blue/5 px-4 py-2 text-sm font-semibold text-tonner-blue transition hover:bg-tonner-blue/10 sm:w-auto"
             >
               + Seguir agregando productos
             </button>
@@ -125,7 +125,7 @@ export default function PurchasePage({
                   key={item.productId}
                   className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-3">
                       {item.image ? (
                         <img

@@ -158,7 +158,7 @@ export default function DistributorsMap({
         viewBox={`0 0 ${width} ${height}`}
         className="
           w-full
-          h-[72vh] md:h-[80vh]
+          h-[56vh] sm:h-[64vh] md:h-[80vh]
           rounded-3xl
           border
           bg-gradient-to-br from-slate-50 to-slate-100

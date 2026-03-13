@@ -199,9 +199,9 @@ function App() {
             <button
               onClick={() => setView('purchase')}
               className="
-                fixed bottom-24 left-4
+                fixed bottom-[7.25rem] left-4
                 rounded-full bg-tonner-blue px-5 py-3
-                font-semibold text-white shadow-2xl
+                text-sm font-semibold text-white shadow-2xl
                 transition hover:bg-tonner-pink
                 z-40
                 md:bottom-6 md:left-6
@@ -214,11 +214,11 @@ function App() {
           <button
             onClick={() => setView('distributors')}
             className="
-              fixed bottom-24 right-4
+              fixed bottom-[7.25rem] right-4
               bg-tonner-orange
               hover:bg-tonner-pink
               text-white
-              font-semibold
+              text-sm font-semibold
               py-3 px-5
               rounded-full
               shadow-2xl

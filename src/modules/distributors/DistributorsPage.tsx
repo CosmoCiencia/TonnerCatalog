@@ -18,22 +18,22 @@ export default function DistributorsPage({ selectedLocation }: DistributorsPageP
   const list = useMemo(() => distributors, []);
 
   return (
-    <main className="max-w-7xl mx-auto px-6 pt-8 pb-14">
+    <main className="mx-auto max-w-7xl px-4 pb-28 pt-6 sm:px-6 md:pb-14 md:pt-8">
       {/* Header compacto, pro */}
-      <div className="flex items-end justify-between gap-6 mb-6">
-        <div>
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl md:text-3xl font-semibold text-white">Distribuidoras Tonner</h1>
           <p className="text-white/70 text-sm md:text-base mt-1">
             Explora el mapa para encontrar tu punto de venta más cercano a {selectedLocation}.
             {deptFocus ? (
-              <span className="ml-2 text-white/90">
+              <span className="mt-1 block text-white/90 md:ml-2 md:mt-0 md:inline">
                 · Enfoque: <span className="font-semibold">{deptFocus}</span>
               </span>
             ) : null}
           </p>
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <div className="bg-white/10 border border-white/15 text-white/80 px-4 py-2 rounded-full text-sm">
             {list.length} distribuidoras
           </div>
@@ -41,32 +41,38 @@ export default function DistributorsPage({ selectedLocation }: DistributorsPageP
       </div>
 
       {/* Lienzo pro: Mapa protagonista + panel flotante */}
-      <div className="relative">
+      <div className="relative lg:min-h-[80vh]">
         {/* MAPA */}
         <DistributorsMap
           distributors={list}
           onSelect={(d) => setSelected(d)}
+          selectedId={selected?.id ?? null}
           onDepartmentFocus={(name) => setDeptFocus(name)}
         />
 
         {/* PANEL FLOTANTE */}
         <aside
           className="
-            absolute
-            right-5 top-5
-            w-[360px]
-            max-w-[92vw]
+            mt-4
+            w-full
+            max-w-none
             rounded-3xl
             bg-white/92
             backdrop-blur
             border
             shadow-[0_25px_80px_rgba(15,23,42,0.22)]
             overflow-hidden
+            lg:absolute
+            lg:right-5
+            lg:top-5
+            lg:mt-0
+            lg:w-[360px]
+            lg:max-w-[92vw]
           "
         >
-          <div className="px-6 py-5 border-b bg-gradient-to-r from-tonner-blue/10 to-tonner-orange/10">
+          <div className="border-b bg-gradient-to-r from-tonner-blue/10 to-tonner-orange/10 px-5 py-4 sm:px-6 sm:py-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white shadow flex items-center justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow">
                 <MapPin className="w-5 h-5 text-tonner-orange" />
               </div>
               <div>
@@ -78,7 +84,7 @@ export default function DistributorsPage({ selectedLocation }: DistributorsPageP
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-5 sm:p-6">
             {!selected ? (
               <div className="text-sm text-slate-600 leading-relaxed">
                 <p className="mb-3">
@@ -169,7 +175,7 @@ export default function DistributorsPage({ selectedLocation }: DistributorsPageP
             )}
           </div>
 
-          <div className="px-6 py-4 border-t text-[11px] text-slate-400 bg-white/70">
+          <div className="border-t bg-white/70 px-5 py-4 text-[11px] text-slate-400 sm:px-6">
             Mapa interactivo · Tonner Catalog · Distribuidoras v1
           </div>
         </aside>
