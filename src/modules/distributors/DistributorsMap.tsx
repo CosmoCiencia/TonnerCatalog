@@ -1,5 +1,3 @@
-// src/modules/distributors/DistributorsMap.tsx
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { geoMercator, geoPath } from 'd3-geo';
 import { select } from 'd3-selection';
@@ -19,7 +17,7 @@ function getDeptName(f: DeptFeature): string {
 interface Props {
   distributors: Distributor[];
   onSelect: (d: Distributor) => void;
-  selectedId?: string | null;
+  selectedId?: string | number | null;
   onDepartmentFocus?: (name: string | null) => void;
 }
 
@@ -33,14 +31,13 @@ export default function DistributorsMap({
   const gRef = useRef<SVGGElement | null>(null);
   const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
-  // “Canvas” interno del svg
   const width = 1200;
   const height = 720;
 
   const projection = useMemo(() => {
     return geoMercator()
-      .center([-74, 4])
-      .scale(3100)
+      .center([-74, 4.5]) // Ajustado un pelo al centro real
+      .scale(3500) // Un poquito más de zoom inicial
       .translate([width / 2, height / 2]);
   }, []);
 
@@ -51,11 +48,9 @@ export default function DistributorsMap({
     return (fc.features || []) as DeptFeature[];
   }, []);
 
-  // Hover / Tooltip
   const [hoveredDept, setHoveredDept] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
-  // Mount zoom
   useEffect(() => {
     if (!svgRef.current || !gRef.current) return;
 
@@ -63,7 +58,7 @@ export default function DistributorsMap({
     const g = select(gRef.current);
 
     const zb = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 10])
+      .scaleExtent([1, 12])
       .on('zoom', (event) => {
         g.attr('transform', event.transform.toString());
       });
@@ -77,74 +72,56 @@ export default function DistributorsMap({
     };
   }, []);
 
-  // Zoom a feature (departamento)
   const zoomToFeature = (f: DeptFeature) => {
     if (!svgRef.current || !zoomRef.current) return;
-
     const svg = select(svgRef.current);
     const zb = zoomRef.current;
-
     const b = pathGenerator.bounds(f);
     const [[x0, y0], [x1, y1]] = b;
-
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-
+    const dx = x1 - x0,
+      dy = y1 - y0;
     if (!isFinite(dx) || !isFinite(dy) || dx <= 0 || dy <= 0) return;
-
-    const pad = 0.12;
-    const scale = Math.max(1, Math.min(10, (1 - pad) / Math.max(dx / width, dy / height)));
-
-    const cx = (x0 + x1) / 2;
-    const cy = (y0 + y1) / 2;
-
+    const scale = Math.max(1, Math.min(10, 0.85 / Math.max(dx / width, dy / height)));
     const t = zoomIdentity
       .translate(width / 2, height / 2)
       .scale(scale)
-      .translate(-cx, -cy);
-
+      .translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
     svg
       .transition()
-      .duration(650)
+      .duration(750)
       .call(zb.transform as any, t);
   };
 
-  // Center / zoom to distributor (cuando seleccionas tarjeta)
-  const focusDistributor = (d: Distributor) => {
-    if (!svgRef.current || !zoomRef.current) return;
+  useEffect(() => {
+    if (!selectedId) return;
+    const d = distributors.find(
+      (x) => x.id === selectedId || x.id.toString() === selectedId.toString()
+    );
+    if (!d) return;
 
+    if (!svgRef.current || !zoomRef.current) return;
     const svg = select(svgRef.current);
     const zb = zoomRef.current;
 
-    const pt = projection([d.lng, d.lat]);
+    // Si d.lat/lng no existen, intentamos con d.coordinates
+    const lat = d.lat || (d as any).coordinates?.[0];
+    const lng = d.lng || (d as any).coordinates?.[1];
+
+    const pt = projection([lng, lat]);
     if (!pt) return;
-
-    const [x, y] = pt;
-    const scale = 2.7;
-
     const t = zoomIdentity
       .translate(width / 2, height / 2)
-      .scale(scale)
-      .translate(-x, -y);
-
+      .scale(4)
+      .translate(-pt[0], -pt[1]);
     svg
       .transition()
-      .duration(650)
+      .duration(750)
       .call(zb.transform as any, t);
-  };
-
-  // Cuando cambia el selectedId → centra el mapa a ese pin
-  useEffect(() => {
-    if (!selectedId) return;
-    const d = distributors.find((x) => x.id === selectedId);
-    if (!d) return;
-    focusDistributor(d);
-  }, [selectedId, distributors]);
+  }, [selectedId, distributors, projection]);
 
   const resetZoom = () => {
     if (!svgRef.current || !zoomRef.current) return;
-    const svg = select(svgRef.current);
-    svg
+    select(svgRef.current)
       .transition()
       .duration(600)
       .call(zoomRef.current.transform as any, zoomIdentity);
@@ -156,95 +133,78 @@ export default function DistributorsMap({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
-        className="
-          w-full
-          h-[56vh] sm:h-[64vh] md:h-[80vh]
-          rounded-3xl
-          border
-          bg-gradient-to-br from-slate-50 to-slate-100
-          shadow-[0_20px_60px_rgba(15,23,42,0.12)]
-          cursor-grab
-          select-none
-        "
+        className="h-[60vh] w-full cursor-grab select-none rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_22%),linear-gradient(180deg,#020817_0%,#081225_100%)] shadow-[0_28px_80px_rgba(2,8,23,0.34)] md:h-[80vh]"
         onDoubleClick={resetZoom}
       >
         <defs>
           <filter id="pinGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
             <feMerge>
-              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
 
         <g ref={gRef}>
-          {/* Departamentos */}
           {features.map((feature, i) => {
             const name = getDeptName(feature);
             const isHover = hoveredDept === name;
-
             return (
               <path
-                key={i}
+                key={`dept-${i}`}
                 d={pathGenerator(feature) || ''}
-                fill={isHover ? '#cfe3ff' : '#e5e7eb'}
-                stroke={isHover ? '#2563eb' : '#cbd5e1'}
-                strokeWidth={isHover ? 1.4 : 0.9}
-                style={{ transition: 'all 120ms ease' }}
+                fill={isHover ? '#16326b' : '#0b1730'}
+                stroke={isHover ? '#fb923c' : '#334155'}
+                strokeWidth={isHover ? 2 : 0.5}
+                className="transition-colors duration-200"
                 onMouseEnter={(e) => {
                   setHoveredDept(name);
                   onDepartmentFocus?.(name);
-
-                  const rect = (svgRef.current as SVGSVGElement).getBoundingClientRect();
-                  setTooltip({
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top,
-                    text: name,
-                  });
-                }}
-                onMouseMove={(e) => {
-                  if (!svgRef.current) return;
-                  const rect = svgRef.current.getBoundingClientRect();
-                  setTooltip({
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top,
-                    text: name,
-                  });
+                  const rect = svgRef.current?.getBoundingClientRect();
+                  if (rect)
+                    setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, text: name });
                 }}
                 onMouseLeave={() => {
                   setHoveredDept(null);
                   setTooltip(null);
-                  onDepartmentFocus?.(null);
                 }}
                 onClick={() => zoomToFeature(feature)}
               />
             );
           })}
 
-          {/* Pins */}
           {distributors.map((d) => {
-            const pt = projection([d.lng, d.lat]);
-            if (!pt) return null;
-            const [x, y] = pt;
+            // Lógica robusta para detectar coordenadas
+            const lat = Number(d.lat || (d as any).coordinates?.[0]);
+            const lng = Number(d.lng || (d as any).coordinates?.[1]);
 
-            const active = selectedId === d.id;
+            // Jitter para que no se solapen (usamos el ID como semilla)
+            const seed = Number(d.id) || 0;
+            const jitterLat = Math.sin(seed) * 0.012;
+            const jitterLng = Math.cos(seed) * 0.012;
+
+            const pt = projection([lng + jitterLng, lat + jitterLat]);
+            if (!pt) return null;
+
+            const active = selectedId?.toString() === d.id.toString();
 
             return (
               <g
-                key={d.id}
-                transform={`translate(${x}, ${y})`}
+                key={`pin-${d.id}`}
+                transform={`translate(${pt[0]}, ${pt[1]})`}
                 className="cursor-pointer"
-                onClick={() => onSelect(d)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect(d);
+                }}
               >
-                {/* halo */}
-                <circle r={active ? 22 : 16} fill="#f97316" opacity={active ? 0.22 : 0.14} />
-                {/* pin */}
+                {active && <circle r="15" fill="#f97316" className="animate-ping" opacity="0.3" />}
                 <circle
-                  r={active ? 9 : 7}
-                  fill="#f97316"
+                  r={active ? 8 : 4.5}
+                  fill={active ? '#fb923c' : '#ff7d00'}
                   stroke="#ffffff"
-                  strokeWidth={2}
+                  strokeWidth={active ? 2 : 1}
                   filter="url(#pinGlow)"
                 />
               </g>
@@ -253,24 +213,14 @@ export default function DistributorsMap({
         </g>
       </svg>
 
-      {/* Tooltip depto */}
       {tooltip && (
         <div
-          className="pointer-events-none absolute z-20 -translate-y-2"
-          style={{ left: tooltip.x + 10, top: tooltip.y - 10 }}
+          className="pointer-events-none absolute z-20 rounded-xl border border-white/10 bg-slate-950/92 px-2.5 py-1.5 text-[10px] font-medium text-white shadow-xl backdrop-blur"
+          style={{ left: tooltip.x + 15, top: tooltip.y - 15 }}
         >
-          <div className="bg-slate-900 text-white text-xs px-3 py-1 rounded-full shadow">
-            {tooltip.text}
-          </div>
+          {tooltip.text}
         </div>
       )}
-
-      {/* Hint */}
-      <div className="absolute left-4 bottom-4 z-10">
-        <div className="text-xs text-slate-600 bg-white/80 backdrop-blur px-3 py-1 rounded-full shadow">
-          Scroll = zoom · Arrastra = mover · Click depto = enfocar · Doble click vacío = reset
-        </div>
-      </div>
     </div>
   );
 }

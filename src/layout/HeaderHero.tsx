@@ -1,4 +1,4 @@
-import { Home, Factory, Car, TreePine, Layers, ShoppingCart } from 'lucide-react';
+import { Home, Factory, Car, TreePine, Layers, Search, ShoppingCart } from 'lucide-react';
 
 import { TonnerLineKey } from '../modules/catalog/tonnerLines';
 
@@ -6,16 +6,18 @@ interface HeaderHeroProps {
   activeLine: TonnerLineKey | 'all';
   orderCount?: number;
   onChangeLine: (line: TonnerLineKey | 'all') => void;
-  onOpenGuide?: () => void;
   onOpenPurchase?: () => void;
+  searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
 }
 
 export default function HeaderHero({
   activeLine,
   orderCount = 0,
   onChangeLine,
-  onOpenGuide,
   onOpenPurchase,
+  searchQuery,
+  onSearchQueryChange,
 }: HeaderHeroProps) {
   const iconClass = (active: boolean) =>
     `
@@ -99,33 +101,39 @@ export default function HeaderHero({
           />
         </div>
 
-        {/* GUÍA DE COMPRA */}
+        {/* EXPLORACIÓN Y BÚSQUEDA */}
         <div className="mb-8 flex justify-center md:mb-14">
-          <button
-            onClick={onOpenGuide}
-            className="
-              w-full max-w-2xl
-              px-4 py-3.5
-              rounded-2xl
-              bg-white
-              shadow-2xl
-              flex items-center justify-between
-              group
-              transition
-              md:px-6 md:py-4 md:rounded-full
-              hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]
-            "
-          >
-            <span className="text-left text-[13px] text-gray-600 uppercase tracking-wide md:text-base">
-              ¿Qué necesitas pintar?
-            </span>
-            <span className="text-tonner-blue text-sm font-semibold uppercase tracking-wide opacity-70 transition group-hover:opacity-100 md:text-base">
-              Empezar →
-            </span>
-          </button>
+          <div className="w-full max-w-2xl text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/70 md:text-xs">
+              Explora línea de productos Tonner
+            </p>
+
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white md:text-4xl">
+              Descubre la línea ideal para tu proyecto
+            </h1>
+
+            <div className="mt-5 flex justify-center">
+              <label
+                className="
+                  flex w-full max-w-xl items-center gap-3 rounded-2xl border border-white/70
+                  bg-white/95 px-4 py-3 text-left shadow-[0_20px_50px_rgba(15,23,42,0.22)]
+                  backdrop-blur-md transition hover:bg-white md:rounded-full md:px-5 md:py-4
+                "
+              >
+                <Search className="h-4 w-4 shrink-0 text-slate-400 md:h-5 md:w-5" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => onSearchQueryChange(event.target.value)}
+                  placeholder="Buscar producto, línea o referencia"
+                  className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400 md:text-base"
+                />
+              </label>
+            </div>
+          </div>
         </div>
 
-        {/* SELECTOR DE LÍNEAS — ICONOS */}
+        {/* SELECTOR DE LÍNEAS */}
         <div className="-mx-1 flex gap-5 overflow-x-auto px-1 pb-2 md:mx-0 md:flex-wrap md:justify-center md:gap-10 md:overflow-visible md:px-0">
           <div onClick={() => onChangeLine('all')} className={iconClass(activeLine === 'all')}>
             <Layers className="w-9 h-9" />

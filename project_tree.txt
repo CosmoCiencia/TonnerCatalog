@@ -105,7 +105,14 @@
 │   │   │   ├── HomeContratista.tsx
 │   │   │   ├── HomeDistribuidor.tsx
 │   │   │   ├── HomeScreen.tsx
-│   │   │   └── types.ts
+│   │   │   ├── types.ts
+│   │   │   └── wizard
+│   │   │       ├── clientGoals.ts
+│   │   │       ├── clientIntents.ts
+│   │   │       ├── contractorIntents.ts
+│   │   │       ├── distributorIntents.ts
+│   │   │       ├── recommendationEngine.ts
+│   │   │       └── recommendationRules.ts
 │   │   ├── onboarding
 │   │   │   ├── location.ts
 │   │   │   ├── RoleScreen.tsx
@@ -120,4 +127,4 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-15 directories, 106 files
+16 directories, 112 files

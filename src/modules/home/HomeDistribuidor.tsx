@@ -1,262 +1,10 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Building2, Car, Factory, Gem, Home, MapPin, PackageSearch, ShoppingBag, Sparkles, TreePine, TrendingUp, Truck } from 'lucide-react';
-import { PRODUCTS } from '../catalog/products';
-import { TONNER_LINES, type TonnerLineKey } from '../catalog/tonnerLines';
-import type { Product } from '../catalog/types';
+import { ArrowLeft, MapPin } from 'lucide-react';
+import { TONNER_LINES } from '../catalog/tonnerLines';
+import { distributorFocuses, portfolioLines, portfolioScenarios } from './wizard/distributorIntents';
+import { findProductsByIds } from './wizard/recommendationEngine';
+import { distributorRecommendationRules } from './wizard/recommendationRules';
 import type { HomeScreenProps } from './types';
-
-type DistributorFocusKey = 'rotacion' | 'premium' | 'pedido' | 'cobertura';
-
-interface PortfolioLine {
-  key: TonnerLineKey;
-  label: string;
-  icon: typeof Home;
-  accentClass: string;
-}
-
-interface CommercialScenario {
-  label: string;
-  description: string;
-  icon: typeof Home;
-}
-
-interface DistributorFocus {
-  key: DistributorFocusKey;
-  label: string;
-  description: string;
-  icon: typeof Home;
-}
-
-interface DistributorRule {
-  line: TonnerLineKey;
-  scenario: string;
-  focus: Partial<Record<DistributorFocusKey, string[]>>;
-  fallback: string[];
-}
-
-const portfolioLines: PortfolioLine[] = [
-  { key: 'arquitectonica', label: 'Arquitectónica', icon: Home, accentClass: 'home-card-architectonica' },
-  { key: 'industrial', label: 'Industrial', icon: Factory, accentClass: 'home-card-industrial' },
-  { key: 'automotriz', label: 'Automotriz', icon: Car, accentClass: 'home-card-automotriz' },
-  { key: 'maderas', label: 'Maderas', icon: TreePine, accentClass: 'home-card-maderas' },
-];
-
-const portfolioScenarios: Record<TonnerLineKey, CommercialScenario[]> = {
-  arquitectonica: [
-    { label: 'Alta rotación', description: 'Productos de salida constante para mostrador.', icon: TrendingUp },
-    { label: 'Portafolio premium', description: 'Referencias de mejor desempeño y valor.', icon: Gem },
-    { label: 'Cobertura de obra', description: 'Surtido para clientes de construcción y remodelación.', icon: Truck },
-  ],
-  industrial: [
-    { label: 'Metal y mantenimiento', description: 'Base para ferretería técnica y mantenimiento.', icon: Factory },
-    { label: 'Demarcación y tráfico', description: 'Líneas de alto movimiento para señalización.', icon: TrendingUp },
-    { label: 'Protección anticorrosiva', description: 'Sistema técnico para industria y metalmecánica.', icon: Truck },
-  ],
-  automotriz: [
-    { label: 'Taller rápido', description: 'Referencias de salida para repinte diario.', icon: Sparkles },
-    { label: 'Portafolio premium', description: 'Sistema de mayor valor y acabado superior.', icon: Gem },
-    { label: 'Base + preparación', description: 'Productos de soporte para taller y latonería.', icon: ShoppingBag },
-  ],
-  maderas: [
-    { label: 'Carpintería general', description: 'Surtido práctico para talleres y fabricantes.', icon: Building2 },
-    { label: 'Acabado premium', description: 'Lacas y sistemas de mayor valor percibido.', icon: Gem },
-    { label: 'Sellado y base', description: 'Referencias de arranque para producción.', icon: PackageSearch },
-  ],
-};
-
-const distributorFocuses: DistributorFocus[] = [
-  {
-    key: 'rotacion',
-    label: 'Alta rotación',
-    description: 'Sugerir referencias fáciles de mover en volumen.',
-    icon: TrendingUp,
-  },
-  {
-    key: 'premium',
-    label: 'Mayor margen',
-    description: 'Surtido orientado a productos de ticket superior.',
-    icon: Gem,
-  },
-  {
-    key: 'pedido',
-    label: 'Pedido base',
-    description: 'Una selección balanceada para abastecimiento inicial.',
-    icon: ShoppingBag,
-  },
-  {
-    key: 'cobertura',
-    label: 'Cobertura regional',
-    description: 'Portafolio amplio para atender más casos comerciales.',
-    icon: Truck,
-  },
-];
-
-const distributorRules: DistributorRule[] = [
-  {
-    line: 'arquitectonica',
-    scenario: 'Alta rotación',
-    focus: {
-      rotacion: ['vinilton', 'tonerama', 'tonertex'],
-      premium: ['tonertex', 'ultrarmor', 'banos-y-cocinas'],
-      pedido: ['vinilton', 'tonertex', 'banos-y-cocinas'],
-      cobertura: ['vinilton', 'tonertex', 'permakill'],
-    },
-    fallback: ['vinilton', 'tonertex', 'tonerama'],
-  },
-  {
-    line: 'arquitectonica',
-    scenario: 'Portafolio premium',
-    focus: {
-      rotacion: ['tonertex', 'vinilton', 'ultrarmor'],
-      premium: ['ultrarmor', 'tonertex', 'banos-y-cocinas'],
-      pedido: ['tonertex', 'ultrarmor', 'permakill'],
-      cobertura: ['tonertex', 'ultrarmor', 'banos-y-cocinas'],
-    },
-    fallback: ['tonertex', 'ultrarmor', 'banos-y-cocinas'],
-  },
-  {
-    line: 'arquitectonica',
-    scenario: 'Cobertura de obra',
-    focus: {
-      rotacion: ['vinilton', 'tonertex', 'permakill'],
-      premium: ['ultrarmor', 'tonertex', 'permakill'],
-      pedido: ['vinilton', 'tonertex', 'banos-y-cocinas'],
-      cobertura: ['vinilton', 'tonertex', 'permakill'],
-    },
-    fallback: ['vinilton', 'tonertex', 'permakill'],
-  },
-  {
-    line: 'industrial',
-    scenario: 'Metal y mantenimiento',
-    focus: {
-      rotacion: ['secado-flash', 'esmalton-3en1', 'primer-epoxico'],
-      premium: ['epoxico', 'primer-epoxico', 'wash-primer'],
-      pedido: ['secado-flash', 'esmalton-3en1', 'primer-epoxico'],
-      cobertura: ['epoxico', 'secado-flash', 'wash-primer'],
-    },
-    fallback: ['secado-flash', 'esmalton-3en1', 'primer-epoxico'],
-  },
-  {
-    line: 'industrial',
-    scenario: 'Demarcación y tráfico',
-    focus: {
-      rotacion: ['trafico-pesado', 'secado-flash', 'epoxico'],
-      premium: ['epoxico', 'trafico-pesado', 'primer-epoxico'],
-      pedido: ['trafico-pesado', 'secado-flash', 'primer-epoxico'],
-      cobertura: ['trafico-pesado', 'epoxico', 'wash-primer'],
-    },
-    fallback: ['trafico-pesado', 'secado-flash', 'epoxico'],
-  },
-  {
-    line: 'industrial',
-    scenario: 'Protección anticorrosiva',
-    focus: {
-      rotacion: ['primer-epoxico', 'wash-primer', 'secado-flash'],
-      premium: ['epoxico', 'primer-epoxico', 'wash-primer'],
-      pedido: ['primer-epoxico', 'wash-primer', 'epoxico'],
-      cobertura: ['primer-epoxico', 'wash-primer', 'epoxico'],
-    },
-    fallback: ['primer-epoxico', 'wash-primer', 'epoxico'],
-  },
-  {
-    line: 'automotriz',
-    scenario: 'Taller rápido',
-    focus: {
-      rotacion: ['automotiva-industrial', 'fondo-nitro-industrial', 'masilla-industrial-nitro'],
-      premium: ['automotiva', 'poliuretano', 'fondo-poliuretano-2k'],
-      pedido: ['automotiva-industrial', 'fondo-nitro-industrial', 'masilla-industrial-nitro'],
-      cobertura: ['automotiva-industrial', 'fondo-nitro-industrial', 'pasta-para-pulir'],
-    },
-    fallback: ['automotiva-industrial', 'fondo-nitro-industrial', 'masilla-industrial-nitro'],
-  },
-  {
-    line: 'automotriz',
-    scenario: 'Portafolio premium',
-    focus: {
-      rotacion: ['automotiva', 'poliuretano', 'fondo-poliuretano-2k'],
-      premium: ['poliuretano', 'automotiva', 'fondo-poliuretano-2k'],
-      pedido: ['automotiva', 'poliuretano', 'fondo-nitro'],
-      cobertura: ['automotiva', 'poliuretano', 'masilla-nitro'],
-    },
-    fallback: ['poliuretano', 'automotiva', 'fondo-poliuretano-2k'],
-  },
-  {
-    line: 'automotriz',
-    scenario: 'Base + preparación',
-    focus: {
-      rotacion: ['fondo-nitro-industrial', 'masilla-industrial-nitro', 'pasta-para-pulir'],
-      premium: ['fondo-poliuretano-2k', 'masilla-nitro', 'poliuretano'],
-      pedido: ['fondo-nitro-industrial', 'masilla-industrial-nitro', 'fondo-poliuretano-2k'],
-      cobertura: ['fondo-nitro', 'masilla-nitro', 'pasta-para-pulir'],
-    },
-    fallback: ['fondo-nitro-industrial', 'masilla-industrial-nitro', 'pasta-para-pulir'],
-  },
-  {
-    line: 'maderas',
-    scenario: 'Carpintería general',
-    focus: {
-      rotacion: ['LM-700', 'LM-730', 'LC-735'],
-      premium: ['LC-750', 'PU-740', 'LC-759'],
-      pedido: ['LM-700', 'LM-730', 'LC-735'],
-      cobertura: ['LM-700', 'LC-750', 'PU-740'],
-    },
-    fallback: ['LM-700', 'LM-730', 'LC-735'],
-  },
-  {
-    line: 'maderas',
-    scenario: 'Acabado premium',
-    focus: {
-      rotacion: ['LC-750', 'LC-759', 'PU-740'],
-      premium: ['PU-740', 'LC-750', 'LC-759'],
-      pedido: ['LC-750', 'LC-759', 'LM-700'],
-      cobertura: ['PU-740', 'LC-750', 'LM-730'],
-    },
-    fallback: ['PU-740', 'LC-750', 'LC-759'],
-  },
-  {
-    line: 'maderas',
-    scenario: 'Sellado y base',
-    focus: {
-      rotacion: ['LM-730', 'LC-735', 'PU-740'],
-      premium: ['LC-735', 'PU-740', 'LC-750'],
-      pedido: ['LM-730', 'LC-735', 'LM-700'],
-      cobertura: ['LM-730', 'LC-735', 'PU-740'],
-    },
-    fallback: ['LM-730', 'LC-735', 'PU-740'],
-  },
-];
-
-function findProductsByIds(productIds: string[], line: TonnerLineKey): Product[] {
-  const selected: Product[] = [];
-
-  for (const productId of productIds) {
-    const product = PRODUCTS.find(
-      (item) =>
-        item &&
-        item.id === productId &&
-        item.line === line &&
-        !selected.some((entry) => entry.id === item.id),
-    );
-    if (product) {
-      selected.push(product);
-    }
-  }
-
-  if (selected.length < 3) {
-    for (const product of PRODUCTS) {
-      if (!product || product.line !== line || selected.some((entry) => entry.id === product.id)) {
-        continue;
-      }
-
-      selected.push(product);
-      if (selected.length === 3) {
-        break;
-      }
-    }
-  }
-
-  return selected.slice(0, 3);
-}
 
 export default function HomeDistribuidor({
   selectedLocation,
@@ -265,9 +13,9 @@ export default function HomeDistribuidor({
   onOpenCatalog,
   onOpenDistributors,
 }: HomeScreenProps) {
-  const [selectedLine, setSelectedLine] = useState<PortfolioLine | null>(null);
+  const [selectedLine, setSelectedLine] = useState<(typeof portfolioLines)[number] | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
-  const [selectedFocus, setSelectedFocus] = useState<DistributorFocusKey | null>(null);
+  const [selectedFocus, setSelectedFocus] = useState<(typeof distributorFocuses)[number]['key'] | null>(null);
 
   const card =
     'home-card home-fade-up flex min-h-[132px] flex-col items-start justify-between gap-4 rounded-2xl px-4 py-5 text-left transition duration-300 sm:min-h-[148px] sm:p-6';
@@ -280,16 +28,12 @@ export default function HomeDistribuidor({
       return [];
     }
 
-    const rule = distributorRules.find(
+    const rule = distributorRecommendationRules.find(
       (item) => item.line === selectedLine.key && item.scenario === selectedScenario,
     );
 
-    if (!rule) {
-      return findProductsByIds([], selectedLine.key);
-    }
-
-    return findProductsByIds(rule.focus[selectedFocus] ?? rule.fallback, selectedLine.key);
-  }, [selectedLine, selectedScenario, selectedFocus]);
+    return findProductsByIds(rule ? rule.focus[selectedFocus] ?? rule.fallback : [], selectedLine.key);
+  }, [selectedFocus, selectedLine, selectedScenario]);
 
   const currentStep = !selectedLine ? '1 de 3' : !selectedScenario ? '2 de 3' : '3 de 3';
 
@@ -298,12 +42,10 @@ export default function HomeDistribuidor({
       setSelectedFocus(null);
       return;
     }
-
     if (selectedScenario) {
       setSelectedScenario(null);
       return;
     }
-
     setSelectedLine(null);
   };
 
@@ -394,40 +136,38 @@ export default function HomeDistribuidor({
         </div>
 
         {!selectedLine ? (
-          <>
-            <div className="mb-8 grid w-full grid-cols-1 gap-3 sm:mb-10 sm:gap-4">
-              {portfolioLines.map((line, index) => {
-                const Icon = line.icon;
-                const delayClass = index < 2 ? 'home-delay-2' : 'home-delay-3';
+          <div className="mb-8 grid w-full grid-cols-1 gap-3 sm:mb-10 sm:gap-4">
+            {portfolioLines.map((line, index) => {
+              const Icon = line.icon;
+              const delayClass = index < 2 ? 'home-delay-2' : 'home-delay-3';
 
-                return (
-                  <button
-                    key={line.label}
-                    className={`${card} ${delayClass} ${line.accentClass} sm:flex-row sm:items-center`}
-                    onClick={() => {
-                      setSelectedLine(line);
-                      setSelectedScenario(null);
-                      setSelectedFocus(null);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="home-card-icon relative z-10">
-                        <Icon size={28} className="sm:h-8 sm:w-8" />
-                      </div>
-                      <span className="relative z-10 text-sm font-semibold uppercase leading-tight tracking-wide sm:text-base">
-                        {line.label}
-                      </span>
+              return (
+                <button
+                  key={line.label}
+                  className={`${card} ${delayClass} ${line.accentClass} sm:flex-row sm:items-center`}
+                  onClick={() => {
+                    setSelectedLine(line);
+                    setSelectedScenario(null);
+                    setSelectedFocus(null);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="home-card-icon relative z-10">
+                      <Icon size={28} className="sm:h-8 sm:w-8" />
                     </div>
-                    <div className="relative z-10 sm:ml-auto sm:max-w-sm">
-                      <span className="text-[11px] normal-case leading-relaxed text-slate-500 sm:text-xs">
-                        Ver referencias, presentaciones y portafolio de línea.
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </>
+                    <span className="relative z-10 text-sm font-semibold uppercase leading-tight tracking-wide sm:text-base">
+                      {line.label}
+                    </span>
+                  </div>
+                  <div className="relative z-10 sm:ml-auto sm:max-w-sm">
+                    <span className="text-[11px] normal-case leading-relaxed text-slate-500 sm:text-xs">
+                      Ver referencias, presentaciones y portafolio de línea.
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         ) : !selectedScenario ? (
           <div className="mb-8 grid w-full grid-cols-1 gap-3 sm:mb-10 sm:gap-4">
             {currentScenarios.map((scenario, index) => {
@@ -550,25 +290,13 @@ export default function HomeDistribuidor({
         <div className="home-fade-up home-delay-3 flex w-full flex-col gap-4">
           <button
             onClick={onOpenCatalog}
-            className="
-              home-cta-primary flex min-h-12 items-center justify-center gap-3 rounded-xl
-              border border-white/15 px-4 py-3.5 text-sm font-semibold uppercase tracking-wide text-white
-              transition duration-300 hover:-translate-y-1 sm:text-base
-              active:scale-[0.985]
-            "
+            className="home-cta-primary flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/15 px-4 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition duration-300 hover:-translate-y-1 sm:text-base active:scale-[0.985]"
           >
             Ver portafolio completo
           </button>
-
           <button
             onClick={onOpenDistributors}
-            className="
-              flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/18
-              bg-white/14 px-4 py-3.5 text-sm uppercase tracking-wide text-white/90
-              shadow-[0_10px_26px_rgba(8,20,52,0.16)] backdrop-blur-md transition duration-300
-              hover:-translate-y-1 hover:bg-white/18 hover:shadow-[0_20px_40px_rgba(8,20,52,0.22)]
-              active:scale-[0.985] sm:text-base
-            "
+            className="flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/18 bg-white/14 px-4 py-3.5 text-sm uppercase tracking-wide text-white/90 shadow-[0_10px_26px_rgba(8,20,52,0.16)] backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:bg-white/18 hover:shadow-[0_20px_40px_rgba(8,20,52,0.22)] active:scale-[0.985] sm:text-base"
           >
             <MapPin size={18} />
             Ver distribuidores

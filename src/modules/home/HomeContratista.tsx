@@ -1,302 +1,10 @@
 import { useMemo, useState } from 'react';
-import {
-  ArrowLeft,
-  Car,
-  Factory,
-  FileText,
-  Gauge,
-  Gem,
-  HardHat,
-  Home,
-  MapPin,
-  Package,
-  ShieldCheck,
-  Sparkles,
-  TreePine,
-  Wrench,
-} from 'lucide-react';
-import { PRODUCTS } from '../catalog/products';
-import { TONNER_LINES, type TonnerLineKey } from '../catalog/tonnerLines';
-import type { Product } from '../catalog/types';
+import { ArrowLeft, MapPin } from 'lucide-react';
+import { TONNER_LINES } from '../catalog/tonnerLines';
+import { contractorLineUseCases, contractorLines, contractorPriorities } from './wizard/contractorIntents';
+import { findProductsByIds } from './wizard/recommendationEngine';
+import { contractorRecommendationRules } from './wizard/recommendationRules';
 import type { HomeScreenProps } from './types';
-
-type ContractorPriorityKey = 'rendimiento' | 'durabilidad' | 'secado' | 'premium';
-
-interface ContractorLine {
-  key: TonnerLineKey;
-  label: string;
-  hint: string;
-  icon: typeof Home;
-  accentClass: string;
-}
-
-interface ContractorUseCase {
-  label: string;
-  description: string;
-  icon: typeof Home;
-}
-
-interface ContractorPriority {
-  key: ContractorPriorityKey;
-  label: string;
-  description: string;
-  icon: typeof Home;
-}
-
-interface ContractorRule {
-  line: TonnerLineKey;
-  useCase: string;
-  priorities: Partial<Record<ContractorPriorityKey, string[]>>;
-  fallback: string[];
-}
-
-const contractorLines: ContractorLine[] = [
-  {
-    key: 'arquitectonica',
-    label: 'Arquitectónica',
-    hint: 'Vinilos, esmaltes y recubrimientos de obra.',
-    icon: Home,
-    accentClass: 'home-card-architectonica',
-  },
-  {
-    key: 'industrial',
-    label: 'Industrial',
-    hint: 'Primers, tráfico y protección de superficie.',
-    icon: Factory,
-    accentClass: 'home-card-industrial',
-  },
-  {
-    key: 'automotriz',
-    label: 'Automotriz',
-    hint: 'Repinte, fondos, masillas y acabados.',
-    icon: Car,
-    accentClass: 'home-card-automotriz',
-  },
-  {
-    key: 'maderas',
-    label: 'Maderas',
-    hint: 'Selladores, lacas y tintes para carpintería.',
-    icon: TreePine,
-    accentClass: 'home-card-maderas',
-  },
-];
-
-const lineUseCases: Record<TonnerLineKey, ContractorUseCase[]> = {
-  arquitectonica: [
-    { label: 'Muro interior', description: 'Obra residencial y comercial interior.', icon: Home },
-    { label: 'Fachada', description: 'Exterior expuesto a intemperie.', icon: HardHat },
-    { label: 'Zona húmeda', description: 'Baños, cocinas y áreas sensibles.', icon: ShieldCheck },
-  ],
-  industrial: [
-    { label: 'Estructura metálica', description: 'Protección y acabado de piezas metálicas.', icon: Factory },
-    { label: 'Piso / demarcación', description: 'Tráfico, canchas y señalización.', icon: Gauge },
-    { label: 'Primer anticorrosivo', description: 'Base técnica para sistemas industriales.', icon: Wrench },
-  ],
-  automotriz: [
-    { label: 'Acabado', description: 'Color y terminación final.', icon: Sparkles },
-    { label: 'Fondo', description: 'Preparación de superficie.', icon: Package },
-    { label: 'Masilla', description: 'Relleno y corrección.', icon: Wrench },
-  ],
-  maderas: [
-    { label: 'Sellado', description: 'Preparación antes del acabado.', icon: FileText },
-    { label: 'Acabado brillante', description: 'Presentación final con brillo.', icon: Gem },
-    { label: 'Acabado resistente', description: 'Mayor vida útil y dureza.', icon: ShieldCheck },
-  ],
-};
-
-const contractorPriorities: ContractorPriority[] = [
-  {
-    key: 'rendimiento',
-    label: 'Rendimiento',
-    description: 'Buena cobertura y productividad en obra.',
-    icon: Gauge,
-  },
-  {
-    key: 'durabilidad',
-    label: 'Durabilidad',
-    description: 'Mayor resistencia y permanencia del sistema.',
-    icon: ShieldCheck,
-  },
-  {
-    key: 'secado',
-    label: 'Secado rápido',
-    description: 'Menos tiempo de espera entre procesos.',
-    icon: Sparkles,
-  },
-  {
-    key: 'premium',
-    label: 'Acabado premium',
-    description: 'Resultado visual y técnico superior.',
-    icon: Gem,
-  },
-];
-
-const contractorRules: ContractorRule[] = [
-  {
-    line: 'arquitectonica',
-    useCase: 'Muro interior',
-    priorities: {
-      rendimiento: ['vinilton', 'tonerama', 'tonertex'],
-      durabilidad: ['tonertex', 'vinilton', 'banos-y-cocinas'],
-      secado: ['vinilton', 'tonerama', 'tonertex'],
-      premium: ['tonertex', 'banos-y-cocinas', 'vinilton'],
-    },
-    fallback: ['vinilton', 'tonertex', 'tonerama'],
-  },
-  {
-    line: 'arquitectonica',
-    useCase: 'Fachada',
-    priorities: {
-      rendimiento: ['vinilton', 'ultrarmor', 'tonertex'],
-      durabilidad: ['ultrarmor', 'permakill', 'tonertex'],
-      secado: ['ultrarmor', 'vinilton', 'tonertex'],
-      premium: ['ultrarmor', 'tonertex', 'permakill'],
-    },
-    fallback: ['ultrarmor', 'tonertex', 'permakill'],
-  },
-  {
-    line: 'arquitectonica',
-    useCase: 'Zona húmeda',
-    priorities: {
-      rendimiento: ['banos-y-cocinas', 'vinilton', 'tonertex'],
-      durabilidad: ['banos-y-cocinas', 'permakill', 'ultrarmor'],
-      secado: ['banos-y-cocinas', 'tonertex', 'vinilton'],
-      premium: ['banos-y-cocinas', 'ultrarmor', 'tonertex'],
-    },
-    fallback: ['banos-y-cocinas', 'permakill', 'tonertex'],
-  },
-  {
-    line: 'industrial',
-    useCase: 'Estructura metálica',
-    priorities: {
-      rendimiento: ['secado-flash', 'esmalton-3en1', 'primer-epoxico'],
-      durabilidad: ['epoxico', 'primer-epoxico', 'wash-primer'],
-      secado: ['secado-flash', 'primer-epoxico', 'esmalton-3en1'],
-      premium: ['epoxico', 'esmalton-3en1', 'primer-epoxico'],
-    },
-    fallback: ['epoxico', 'primer-epoxico', 'wash-primer'],
-  },
-  {
-    line: 'industrial',
-    useCase: 'Piso / demarcación',
-    priorities: {
-      rendimiento: ['trafico-pesado', 'secado-flash', 'epoxico'],
-      durabilidad: ['trafico-pesado', 'epoxico', 'primer-epoxico'],
-      secado: ['trafico-pesado', 'secado-flash', 'primer-epoxico'],
-      premium: ['epoxico', 'trafico-pesado', 'wash-primer'],
-    },
-    fallback: ['trafico-pesado', 'epoxico', 'secado-flash'],
-  },
-  {
-    line: 'industrial',
-    useCase: 'Primer anticorrosivo',
-    priorities: {
-      rendimiento: ['primer-epoxico', 'wash-primer', 'secado-flash'],
-      durabilidad: ['wash-primer', 'primer-epoxico', 'epoxico'],
-      secado: ['wash-primer', 'primer-epoxico', 'secado-flash'],
-      premium: ['primer-epoxico', 'epoxico', 'wash-primer'],
-    },
-    fallback: ['primer-epoxico', 'wash-primer', 'epoxico'],
-  },
-  {
-    line: 'automotriz',
-    useCase: 'Acabado',
-    priorities: {
-      rendimiento: ['automotiva-industrial', 'automotiva', 'poliuretano'],
-      durabilidad: ['poliuretano', 'automotiva-industrial', 'automotiva'],
-      secado: ['automotiva', 'automotiva-industrial', 'poliuretano'],
-      premium: ['poliuretano', 'automotiva', 'automotiva-industrial'],
-    },
-    fallback: ['automotiva', 'automotiva-industrial', 'poliuretano'],
-  },
-  {
-    line: 'automotriz',
-    useCase: 'Fondo',
-    priorities: {
-      rendimiento: ['fondo-nitro-industrial', 'fondo-nitro', 'fondo-poliuretano-2k'],
-      durabilidad: ['fondo-poliuretano-2k', 'fondo-nitro-industrial', 'fondo-nitro'],
-      secado: ['fondo-nitro', 'fondo-nitro-industrial', 'fondo-poliuretano-2k'],
-      premium: ['fondo-poliuretano-2k', 'fondo-nitro', 'poliuretano'],
-    },
-    fallback: ['fondo-nitro', 'fondo-nitro-industrial', 'fondo-poliuretano-2k'],
-  },
-  {
-    line: 'automotriz',
-    useCase: 'Masilla',
-    priorities: {
-      rendimiento: ['masilla-industrial-nitro', 'masilla-nitro', 'pasta-para-pulir'],
-      durabilidad: ['masilla-nitro', 'masilla-industrial-nitro', 'fondo-poliuretano-2k'],
-      secado: ['masilla-nitro', 'masilla-industrial-nitro', 'pasta-para-pulir'],
-      premium: ['masilla-nitro', 'pasta-para-pulir', 'fondo-poliuretano-2k'],
-    },
-    fallback: ['masilla-nitro', 'masilla-industrial-nitro', 'pasta-para-pulir'],
-  },
-  {
-    line: 'maderas',
-    useCase: 'Sellado',
-    priorities: {
-      rendimiento: ['LM-730', 'LC-735', 'PU-740'],
-      durabilidad: ['LC-735', 'PU-740', 'LC-750'],
-      secado: ['LM-730', 'LC-735', 'LC-750'],
-      premium: ['LC-735', 'PU-740', 'LC-750'],
-    },
-    fallback: ['LM-730', 'LC-735', 'PU-740'],
-  },
-  {
-    line: 'maderas',
-    useCase: 'Acabado brillante',
-    priorities: {
-      rendimiento: ['LM-700', 'LC-759', 'LC-750'],
-      durabilidad: ['PU-740', 'LC-750', 'LM-700'],
-      secado: ['LM-700', 'LC-750', 'LC-759'],
-      premium: ['PU-740', 'LC-750', 'LC-759'],
-    },
-    fallback: ['LM-700', 'LC-750', 'PU-740'],
-  },
-  {
-    line: 'maderas',
-    useCase: 'Acabado resistente',
-    priorities: {
-      rendimiento: ['LC-759', 'PU-740', 'LM-700'],
-      durabilidad: ['PU-740', 'LC-750', 'LC-759'],
-      secado: ['LC-750', 'LM-700', 'LC-759'],
-      premium: ['PU-740', 'LC-750', 'LC-759'],
-    },
-    fallback: ['PU-740', 'LC-750', 'LC-759'],
-  },
-];
-
-function findProductsByIds(productIds: string[], line: TonnerLineKey): Product[] {
-  const selected: Product[] = [];
-
-  for (const productId of productIds) {
-    const product = PRODUCTS.find(
-      (item) =>
-        item &&
-        item.id === productId &&
-        item.line === line &&
-        !selected.some((entry) => entry.id === item.id),
-    );
-    if (product) {
-      selected.push(product);
-    }
-  }
-
-  if (selected.length < 3) {
-    for (const product of PRODUCTS) {
-      if (!product || product.line !== line || selected.some((entry) => entry.id === product.id)) {
-        continue;
-      }
-
-      selected.push(product);
-      if (selected.length === 3) {
-        break;
-      }
-    }
-  }
-
-  return selected.slice(0, 3);
-}
 
 export default function HomeContratista({
   selectedLocation,
@@ -305,14 +13,14 @@ export default function HomeContratista({
   onOpenCatalog,
   onOpenDistributors,
 }: HomeScreenProps) {
-  const [selectedLine, setSelectedLine] = useState<ContractorLine | null>(null);
+  const [selectedLine, setSelectedLine] = useState<(typeof contractorLines)[number] | null>(null);
   const [selectedUseCase, setSelectedUseCase] = useState<string | null>(null);
-  const [selectedPriority, setSelectedPriority] = useState<ContractorPriorityKey | null>(null);
+  const [selectedPriority, setSelectedPriority] = useState<(typeof contractorPriorities)[number]['key'] | null>(null);
 
   const card =
     'home-card home-fade-up flex min-h-[132px] flex-col items-center justify-center gap-3 rounded-2xl px-4 py-5 text-center transition duration-300 sm:min-h-[148px] sm:p-6';
 
-  const currentUseCases = selectedLine ? lineUseCases[selectedLine.key] : [];
+  const currentUseCases = selectedLine ? contractorLineUseCases[selectedLine.key] : [];
   const lineMeta = selectedLine ? TONNER_LINES[selectedLine.key] : null;
 
   const recommendedProducts = useMemo(() => {
@@ -320,15 +28,11 @@ export default function HomeContratista({
       return [];
     }
 
-    const rule = contractorRules.find(
+    const rule = contractorRecommendationRules.find(
       (item) => item.line === selectedLine.key && item.useCase === selectedUseCase,
     );
 
-    if (!rule) {
-      return findProductsByIds([], selectedLine.key);
-    }
-
-    return findProductsByIds(rule.priorities[selectedPriority] ?? rule.fallback, selectedLine.key);
+    return findProductsByIds(rule ? rule.priorities[selectedPriority] ?? rule.fallback : [], selectedLine.key);
   }, [selectedLine, selectedUseCase, selectedPriority]);
 
   const currentStep = !selectedLine ? '1 de 3' : !selectedUseCase ? '2 de 3' : '3 de 3';
@@ -338,12 +42,10 @@ export default function HomeContratista({
       setSelectedPriority(null);
       return;
     }
-
     if (selectedUseCase) {
       setSelectedUseCase(null);
       return;
     }
-
     setSelectedLine(null);
   };
 
@@ -584,25 +286,13 @@ export default function HomeContratista({
         <div className="home-fade-up home-delay-3 flex w-full flex-col gap-4">
           <button
             onClick={onOpenCatalog}
-            className="
-              home-cta-primary flex min-h-12 items-center justify-center gap-3 rounded-xl
-              border border-white/15 px-4 py-3.5 text-sm font-semibold uppercase tracking-wide text-white
-              transition duration-300 hover:-translate-y-1 sm:text-base
-              active:scale-[0.985]
-            "
+            className="home-cta-primary flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/15 px-4 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition duration-300 hover:-translate-y-1 sm:text-base active:scale-[0.985]"
           >
             Ver todos los productos
           </button>
-
           <button
             onClick={onOpenDistributors}
-            className="
-              flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/18
-              bg-white/14 px-4 py-3.5 text-sm uppercase tracking-wide text-white/90
-              shadow-[0_10px_26px_rgba(8,20,52,0.16)] backdrop-blur-md transition duration-300
-              hover:-translate-y-1 hover:bg-white/18 hover:shadow-[0_20px_40px_rgba(8,20,52,0.22)]
-              active:scale-[0.985] sm:text-base
-            "
+            className="flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/18 bg-white/14 px-4 py-3.5 text-sm uppercase tracking-wide text-white/90 shadow-[0_10px_26px_rgba(8,20,52,0.16)] backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:bg-white/18 hover:shadow-[0_20px_40px_rgba(8,20,52,0.22)] active:scale-[0.985] sm:text-base"
           >
             Ubicar distribuidoras
           </button>

@@ -22,7 +22,6 @@ const roles: Array<{
   key: UserType;
   label: string;
   description: string;
-  benefit: string;
   icon: typeof Home;
   iconBg: string;
   cardAccent: string;
@@ -32,7 +31,6 @@ const roles: Array<{
     key: 'cliente',
     label: 'Cliente',
     description: 'Hogar, mantenimiento y proyectos personales.',
-    benefit: 'Ruta simple para encontrar producto según lo que vas a pintar.',
     icon: Home,
     iconBg: 'bg-rose-50 text-rose-600',
     cardAccent: 'before:bg-rose-500',
@@ -42,7 +40,6 @@ const roles: Array<{
     key: 'contratista',
     label: 'Contratista',
     description: 'Aplicación profesional y decisiones técnicas.',
-    benefit: 'Ingreso rápido a líneas, productos frecuentes y pedido de obra.',
     icon: HardHat,
     iconBg: 'bg-amber-50 text-amber-600',
     cardAccent: 'before:bg-amber-500',
@@ -52,7 +49,6 @@ const roles: Array<{
     key: 'distribuidor',
     label: 'Distribuidor',
     description: 'Portafolio completo y pedidos comerciales.',
-    benefit: 'Vista comercial para referencias, surtido y cotización mayorista.',
     icon: Store,
     iconBg: 'bg-emerald-50 text-emerald-600',
     cardAccent: 'before:bg-emerald-500',
@@ -246,10 +242,6 @@ export default function RoleScreen({ onSelectUserType }: Props) {
                     </h3>
 
                     <p className="text-xs leading-relaxed text-slate-600">{role.description}</p>
-
-                    <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-slate-500">
-                      {role.benefit}
-                    </p>
                   </div>
 
                   <ArrowRight

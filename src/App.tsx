@@ -37,6 +37,7 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const [showGuideModal, setShowGuideModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [customerData, setCustomerData] = useState<CustomerData>({
@@ -77,8 +78,26 @@ function App() {
 
   const safeProducts = products.filter((p): p is Product => Boolean(p));
 
-  const filteredProducts =
-    activeLine === 'all' ? safeProducts : safeProducts.filter((p) => p.line === activeLine);
+  const filteredProducts = safeProducts.filter((product) => {
+    const matchesLine = activeLine === 'all' ? true : product.line === activeLine;
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    if (!normalizedQuery) return matchesLine;
+
+    const haystack = [
+      product.name,
+      product.category,
+      product.segment,
+      product.subline,
+      product.short_description,
+      product.description,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return matchesLine && haystack.includes(normalizedQuery);
+  });
 
   const primaryActionLabel =
     userType === 'cliente'
@@ -133,8 +152,9 @@ function App() {
             activeLine={activeLine}
             orderCount={orderItems.length}
             onChangeLine={setActiveLine}
-            onOpenGuide={() => setShowGuideModal(true)}
             onOpenPurchase={() => setView('purchase')}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
           />
         )}
 
@@ -146,7 +166,7 @@ function App() {
         {view === 'catalog' && (
           <main className="mx-auto max-w-7xl px-4 py-8 pb-32 md:px-6 md:py-28 md:pb-28">
             <section className="rounded-[28px] bg-white p-4 shadow-[0_30px_80px_rgba(0,0,0,0.25)] md:rounded-3xl md:p-8">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-4">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}

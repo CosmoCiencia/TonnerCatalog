@@ -143,7 +143,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/fondo-nitro.png',
   },
-  ,
   {
     id: 'fondo-nitro-industrial',
     name: 'FONDO NITRO INDUSTRIAL',
@@ -190,7 +189,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/fondo-nitro-industrial.png',
   },
-  ,
   {
     id: 'masilla-nitro',
     name: 'MASILLA NITRO',
@@ -231,7 +229,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/masilla-nitro.png',
   },
-  ,
   {
     id: 'masilla-industrial-nitro',
     name: 'MASILLA INDUSTRIAL NITRO',
@@ -390,7 +387,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/laca-acrilica.png',
   },
-  ,
   {
     id: 'fondo-acrilico',
     name: 'FONDO ACRÍLICO',
@@ -426,7 +422,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/fondo-acrilico.png',
   },
-  ,
   {
     id: 'masilla-acrilica',
     name: 'MASILLA ACRÍLICA',
@@ -463,7 +458,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/masilla-acrilica.png',
   },
-  ,
   {
     id: 'poliuretano',
     name: 'POLIURETANO',
@@ -517,7 +511,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/poliuretano.png',
   },
-  ,
   {
     id: 'fondo-poliuretano-2k',
     name: 'FONDO POLIURETANO 2K',
@@ -558,7 +551,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/fondo-poliuretano-2k.png',
   },
-  ,
   {
     id: 'primer-monocomponente',
     name: 'PRIMER MONOCOMPONENTE',
@@ -600,7 +592,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/primer-monocomponente.png',
   },
-  ,
   {
     id: 'monocomponente-acrilico',
     name: 'Monocomponente Acrílico',
@@ -638,7 +629,6 @@ export const AUTOMOTRIZ_PRODUCTS: Product[] = [
 
     image: '/products/mono-componente-acrilico.png',
   },
-  ,
   {
     id: 'masilla-rapida',
     name: 'Masilla Rápida',

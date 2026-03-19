@@ -1,308 +1,11 @@
 import { useMemo, useState } from 'react';
-import {
-  ArrowLeft,
-  Bath,
-  Car,
-  DoorOpen,
-  Droplets,
-  Factory,
-  Gem,
-  Home,
-  MapPin,
-  PaintBucket,
-  ShieldCheck,
-  Sparkles,
-  TreePine,
-  Wrench,
-} from 'lucide-react';
-import { PRODUCTS } from '../catalog/products';
-import { TONNER_LINES, type TonnerLineKey } from '../catalog/tonnerLines';
-import type { Product } from '../catalog/types';
+import { ArrowLeft, MapPin } from 'lucide-react';
+import { TONNER_LINES } from '../catalog/tonnerLines';
+import { clientGoals } from './wizard/clientGoals';
+import { clientIntents } from './wizard/clientIntents';
+import { getRecommendedProducts } from './wizard/recommendationEngine';
+import { clientRecommendationRules } from './wizard/recommendationRules';
 import type { HomeScreenProps } from './types';
-
-type ClientIntentKey = 'casa' | 'carro' | 'madera' | 'metal';
-type ClientGoalKey = 'durabilidad' | 'economia' | 'premium' | 'antihumedad';
-
-interface ClientIntent {
-  key: ClientIntentKey;
-  label: string;
-  hint: string;
-  icon: typeof Home;
-  accentClass: string;
-  line: TonnerLineKey;
-  suboptions: Array<{
-    label: string;
-    description: string;
-    icon: typeof Home;
-  }>;
-}
-
-interface ClientGoal {
-  key: ClientGoalKey;
-  label: string;
-  description: string;
-  icon: typeof Home;
-}
-
-interface RecommendationRule {
-  intent: ClientIntentKey;
-  suboption: string;
-  goals: Partial<Record<ClientGoalKey, string[]>>;
-  fallback: string[];
-}
-
-const clientIntents: ClientIntent[] = [
-  {
-    key: 'casa',
-    label: 'Casa',
-    hint: 'Muros, fachadas y zonas húmedas.',
-    icon: Home,
-    accentClass: 'home-card-architectonica',
-    line: 'arquitectonica',
-    suboptions: [
-      {
-        label: 'Interior',
-        description: 'Muros, techos y espacios residenciales.',
-        icon: PaintBucket,
-      },
-      { label: 'Exterior', description: 'Fachadas y superficies expuestas.', icon: DoorOpen },
-      { label: 'Baño / Cocina', description: 'Áreas con humedad, vapor y grasa.', icon: Bath },
-    ],
-  },
-  {
-    key: 'carro',
-    label: 'Carro',
-    hint: 'Repinte, fondo y acabado automotriz.',
-    icon: Car,
-    accentClass: 'home-card-automotriz',
-    line: 'automotriz',
-    suboptions: [
-      { label: 'Acabado', description: 'Brillo, color y terminación final.', icon: Sparkles },
-      { label: 'Fondo', description: 'Base para preparar superficie.', icon: PaintBucket },
-      { label: 'Masilla', description: 'Corrección de imperfecciones.', icon: Wrench },
-    ],
-  },
-  {
-    key: 'madera',
-    label: 'Madera',
-    hint: 'Sellado, color y acabado de carpintería.',
-    icon: TreePine,
-    accentClass: 'home-card-maderas',
-    line: 'maderas',
-    suboptions: [
-      { label: 'Sellado', description: 'Preparación antes del acabado final.', icon: PaintBucket },
-      { label: 'Color', description: 'Tintes y acabados para tono visible.', icon: Sparkles },
-      { label: 'Acabado', description: 'Lacas, barnices y protección.', icon: DoorOpen },
-    ],
-  },
-  {
-    key: 'metal',
-    label: 'Metal',
-    hint: 'Rejas, estructuras y protección industrial.',
-    icon: Factory,
-    accentClass: 'home-card-industrial',
-    line: 'industrial',
-    suboptions: [
-      { label: 'Rejas', description: 'Protección y acabado decorativo.', icon: DoorOpen },
-      { label: 'Estructuras', description: 'Piezas de trabajo y metalmecánica.', icon: Factory },
-      { label: 'Protección', description: 'Primers y anticorrosivos.', icon: Wrench },
-    ],
-  },
-];
-
-const clientGoals: ClientGoal[] = [
-  {
-    key: 'durabilidad',
-    label: 'Durabilidad',
-    description: 'Mayor resistencia y vida útil del recubrimiento.',
-    icon: ShieldCheck,
-  },
-  {
-    key: 'economia',
-    label: 'Economía',
-    description: 'Buena relación costo-rendimiento para avanzar rápido.',
-    icon: PaintBucket,
-  },
-  {
-    key: 'premium',
-    label: 'Acabado premium',
-    description: 'Mayor presencia visual, brillo o acabado superior.',
-    icon: Gem,
-  },
-  {
-    key: 'antihumedad',
-    label: 'Antihumedad',
-    description: 'Protección extra contra humedad, filtración o vapor.',
-    icon: Droplets,
-  },
-];
-
-const recommendationRules: RecommendationRule[] = [
-  {
-    intent: 'casa',
-    suboption: 'Interior',
-    goals: {
-      economia: ['vinilton', 'tonerama', 'tonertex'],
-      premium: ['tonertex', 'vinilton', 'banos-y-cocinas'],
-      durabilidad: ['tonertex', 'vinilton', 'ultrarmor'],
-      antihumedad: ['banos-y-cocinas', 'permakill', 'tonertex'],
-    },
-    fallback: ['vinilton', 'tonertex', 'tonerama'],
-  },
-  {
-    intent: 'casa',
-    suboption: 'Exterior',
-    goals: {
-      economia: ['vinilton', 'ultrarmor', 'tonertex'],
-      premium: ['ultrarmor', 'tonertex', 'permakill'],
-      durabilidad: ['ultrarmor', 'permakill', 'tonertex'],
-      antihumedad: ['permakill', 'ultrarmor', 'banos-y-cocinas'],
-    },
-    fallback: ['ultrarmor', 'permakill', 'tonertex'],
-  },
-  {
-    intent: 'casa',
-    suboption: 'Baño / Cocina',
-    goals: {
-      economia: ['banos-y-cocinas', 'vinilton', 'tonertex'],
-      premium: ['banos-y-cocinas', 'tonertex', 'ultrarmor'],
-      durabilidad: ['banos-y-cocinas', 'permakill', 'tonertex'],
-      antihumedad: ['banos-y-cocinas', 'permakill', 'ultrarmor'],
-    },
-    fallback: ['banos-y-cocinas', 'permakill', 'tonertex'],
-  },
-  {
-    intent: 'carro',
-    suboption: 'Acabado',
-    goals: {
-      economia: ['automotiva-industrial', 'automotiva', 'poliuretano'],
-      premium: ['poliuretano', 'automotiva', 'automotiva-industrial'],
-      durabilidad: ['poliuretano', 'automotiva-industrial', 'automotiva'],
-      antihumedad: ['automotiva-industrial', 'poliuretano', 'fondo-poliuretano-2k'],
-    },
-    fallback: ['automotiva', 'automotiva-industrial', 'poliuretano'],
-  },
-  {
-    intent: 'carro',
-    suboption: 'Fondo',
-    goals: {
-      economia: ['fondo-nitro-industrial', 'fondo-nitro', 'masilla-industrial-nitro'],
-      premium: ['fondo-poliuretano-2k', 'fondo-nitro', 'poliuretano'],
-      durabilidad: ['fondo-poliuretano-2k', 'fondo-nitro-industrial', 'fondo-nitro'],
-      antihumedad: ['fondo-poliuretano-2k', 'primer-epoxico', 'wash-primer'],
-    },
-    fallback: ['fondo-nitro', 'fondo-nitro-industrial', 'fondo-poliuretano-2k'],
-  },
-  {
-    intent: 'carro',
-    suboption: 'Masilla',
-    goals: {
-      economia: ['masilla-industrial-nitro', 'masilla-nitro', 'fondo-nitro-industrial'],
-      premium: ['masilla-nitro', 'pasta-para-pulir', 'fondo-poliuretano-2k'],
-      durabilidad: ['masilla-nitro', 'masilla-industrial-nitro', 'fondo-poliuretano-2k'],
-      antihumedad: ['masilla-nitro', 'fondo-poliuretano-2k', 'primer-epoxico'],
-    },
-    fallback: ['masilla-nitro', 'masilla-industrial-nitro', 'pasta-para-pulir'],
-  },
-  {
-    intent: 'madera',
-    suboption: 'Sellado',
-    goals: {
-      economia: ['LM-730', 'LC-735', 'PU-740'],
-      premium: ['LC-735', 'PU-740', 'LC-750'],
-      durabilidad: ['LC-735', 'PU-740', 'LC-750'],
-      antihumedad: ['PU-740', 'LC-735', 'LC-750'],
-    },
-    fallback: ['LM-730', 'LC-735', 'PU-740'],
-  },
-  {
-    intent: 'madera',
-    suboption: 'Color',
-    goals: {
-      economia: ['LC-759', 'LM-700', 'LM-730'],
-      premium: ['LC-750', 'LC-759', 'PU-740'],
-      durabilidad: ['LC-750', 'PU-740', 'LC-759'],
-      antihumedad: ['PU-740', 'LC-735', 'LC-750'],
-    },
-    fallback: ['LC-750', 'LC-759', 'PU-740'],
-  },
-  {
-    intent: 'madera',
-    suboption: 'Acabado',
-    goals: {
-      economia: ['LM-700', 'LM-770', 'LM-730'],
-      premium: ['PU-740', 'LC-750', 'LC-759'],
-      durabilidad: ['PU-740', 'LC-750', 'LM-700'],
-      antihumedad: ['PU-740', 'LC-735', 'LC-750'],
-    },
-    fallback: ['LM-700', 'PU-740', 'LC-750'],
-  },
-  {
-    intent: 'metal',
-    suboption: 'Rejas',
-    goals: {
-      economia: ['secado-flash', 'esmalton-3en1', 'primer-epoxico'],
-      premium: ['esmalton-3en1', 'epoxico', 'secado-flash'],
-      durabilidad: ['esmalton-3en1', 'epoxico', 'primer-epoxico'],
-      antihumedad: ['primer-epoxico', 'wash-primer', 'epoxico'],
-    },
-    fallback: ['secado-flash', 'esmalton-3en1', 'primer-epoxico'],
-  },
-  {
-    intent: 'metal',
-    suboption: 'Estructuras',
-    goals: {
-      economia: ['secado-flash', 'primer-epoxico', 'esmalton-3en1'],
-      premium: ['epoxico', 'primer-epoxico', 'wash-primer'],
-      durabilidad: ['epoxico', 'primer-epoxico', 'wash-primer'],
-      antihumedad: ['wash-primer', 'primer-epoxico', 'epoxico'],
-    },
-    fallback: ['epoxico', 'primer-epoxico', 'wash-primer'],
-  },
-  {
-    intent: 'metal',
-    suboption: 'Protección',
-    goals: {
-      economia: ['secado-flash', 'primer-epoxico', 'wash-primer'],
-      premium: ['primer-epoxico', 'epoxico', 'wash-primer'],
-      durabilidad: ['primer-epoxico', 'epoxico', 'wash-primer'],
-      antihumedad: ['wash-primer', 'primer-epoxico', 'epoxico'],
-    },
-    fallback: ['primer-epoxico', 'wash-primer', 'epoxico'],
-  },
-];
-
-function findProductsByIds(productIds: string[], line: TonnerLineKey): Product[] {
-  const selected: Product[] = [];
-
-  for (const productId of productIds) {
-    const product = PRODUCTS.find(
-      (item) =>
-        item &&
-        item.id === productId &&
-        item.line === line &&
-        !selected.some((entry) => entry.id === item.id),
-    );
-    if (product) {
-      selected.push(product);
-    }
-  }
-
-  if (selected.length < 3) {
-    for (const product of PRODUCTS) {
-      if (!product || product.line !== line || selected.some((entry) => entry.id === product.id)) {
-        continue;
-      }
-
-      selected.push(product);
-      if (selected.length === 3) {
-        break;
-      }
-    }
-  }
-
-  return selected.slice(0, 3);
-}
 
 export default function HomeCliente({
   selectedLocation,
@@ -311,14 +14,18 @@ export default function HomeCliente({
   onOpenCatalog,
   onOpenDistributors,
 }: HomeScreenProps) {
-  const [selectedIntent, setSelectedIntent] = useState<ClientIntent | null>(null);
+  const [selectedIntent, setSelectedIntent] = useState<(typeof clientIntents)[number] | null>(null);
   const [selectedSuboption, setSelectedSuboption] = useState<string | null>(null);
-  const [selectedGoal, setSelectedGoal] = useState<ClientGoalKey | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<(typeof clientGoals)[number]['key'] | null>(
+    null
+  );
 
   const card =
     'home-card home-fade-up flex min-h-[132px] flex-col items-center justify-center gap-3 rounded-2xl px-4 py-5 text-center transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.97] sm:min-h-[148px] sm:p-6';
 
   const currentOptions = selectedIntent?.suboptions ?? [];
+  const selectedSuboptionOption =
+    selectedIntent?.suboptions.find((option) => option.id === selectedSuboption) ?? null;
   const lineMeta = selectedIntent ? TONNER_LINES[selectedIntent.line] : null;
 
   const recommendedProducts = useMemo(() => {
@@ -326,52 +33,33 @@ export default function HomeCliente({
       return [];
     }
 
-    const rule = recommendationRules.find(
-      (item) => item.intent === selectedIntent.key && item.suboption === selectedSuboption,
-    );
-
-    if (!rule) {
-      return findProductsByIds([], selectedIntent.line);
-    }
-
-    return findProductsByIds(rule.goals[selectedGoal] ?? rule.fallback, selectedIntent.line);
+    return getRecommendedProducts({
+      intent: selectedIntent.key,
+      suboption: selectedSuboption,
+      goal: selectedGoal,
+      line: selectedIntent.line,
+      rules: clientRecommendationRules,
+    });
   }, [selectedGoal, selectedIntent, selectedSuboption]);
 
   const currentStep = !selectedIntent ? '1 de 3' : !selectedSuboption ? '2 de 3' : '3 de 3';
-
-  const resetFlow = () => {
-    setSelectedIntent(null);
-    setSelectedSuboption(null);
-    setSelectedGoal(null);
-  };
 
   const stepBack = () => {
     if (selectedGoal) {
       setSelectedGoal(null);
       return;
     }
-
     if (selectedSuboption) {
       setSelectedSuboption(null);
       return;
     }
-
     setSelectedIntent(null);
   };
 
-  const handleSelectIntent = (intent: ClientIntent) => {
-    setSelectedIntent(intent);
+  const resetFlow = () => {
+    setSelectedIntent(null);
     setSelectedSuboption(null);
     setSelectedGoal(null);
-  };
-
-  const handleSelectSuboption = (suboption: string) => {
-    setSelectedSuboption(suboption);
-    setSelectedGoal(null);
-  };
-
-  const handleRecommendNow = () => {
-    setSelectedGoal('premium');
   };
 
   return (
@@ -417,7 +105,6 @@ export default function HomeCliente({
                   <h2 className="text-lg font-semibold uppercase leading-tight tracking-[0.08em] text-white sm:text-xl sm:tracking-[0.12em] md:text-2xl">
                     ¿Qué parte de {selectedIntent.label.toLowerCase()} vas a pintar?
                   </h2>
-
                   <p className="mx-auto mt-3 max-w-sm text-sm normal-case leading-relaxed text-white/75">
                     Elige una ruta rápida y te llevamos a una recomendación más precisa.
                   </p>
@@ -427,34 +114,29 @@ export default function HomeCliente({
                   <h2 className="text-lg font-semibold uppercase leading-tight tracking-[0.08em] text-white sm:text-xl sm:tracking-[0.12em] md:text-2xl">
                     ¿Qué tipo de resultado buscas?
                   </h2>
-
                   <p className="mx-auto mt-3 max-w-sm text-sm normal-case leading-relaxed text-white/75">
-                    Ya sabemos que quieres pintar {selectedSuboption.toLowerCase()}. Ahora afinemos
-                    la recomendación.
+                    Ya sabemos que quieres pintar{' '}
+                    {selectedSuboptionOption?.label.toLowerCase() ?? 'esa superficie'}. Ahora
+                    afinemos la recomendación.
                   </p>
                 </>
-              ) : recommendedProducts.length ? (
+              ) : (
                 <>
                   <h2 className="text-lg font-semibold uppercase leading-tight tracking-[0.08em] text-white sm:text-xl sm:tracking-[0.12em] md:text-2xl">
                     Productos recomendados
                   </h2>
-
                   <p className="mx-auto mt-3 max-w-sm text-sm normal-case leading-relaxed text-white/75">
                     Seleccionamos 3 referencias de {lineMeta?.label ?? 'Tonner'} según tu proyecto,
                     subcategoría y objetivo.
                   </p>
                 </>
-              ) : null}
+              )}
             </>
           ) : (
             <>
               <h2 className="text-lg font-semibold uppercase leading-tight tracking-[0.08em] text-white sm:text-xl sm:tracking-[0.12em] md:text-2xl">
                 ¿Qué necesitas pintar?
               </h2>
-
-              <p className="mx-auto mt-3 max-w-sm text-sm normal-case leading-relaxed text-white/75">
-                Entra por tipo de proyecto y encuentra una ruta simple para elegir producto.
-              </p>
             </>
           )}
         </div>
@@ -469,16 +151,18 @@ export default function HomeCliente({
                 <button
                   key={option.label}
                   className={`${card} ${delayClass} ${option.accentClass}`}
-                  onClick={() => handleSelectIntent(option)}
+                  onClick={() => {
+                    setSelectedIntent(option);
+                    setSelectedSuboption(null);
+                    setSelectedGoal(null);
+                  }}
                 >
                   <div className="home-card-icon relative z-10">
                     <Icon size={32} className="sm:h-9 sm:w-9" />
                   </div>
-
                   <span className="relative z-10 text-sm font-semibold uppercase leading-tight tracking-wide sm:text-base">
                     {option.label}
                   </span>
-
                   <span className="relative z-10 text-[11px] normal-case leading-relaxed text-slate-500 sm:text-xs">
                     {option.hint}
                   </span>
@@ -497,17 +181,18 @@ export default function HomeCliente({
                 <button
                   key={option.label}
                   className={`home-card ${selectedIntent.accentClass} ${delayClass} home-fade-up flex items-center gap-4 rounded-2xl px-4 py-4 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.97] sm:px-5`}
-                  onClick={() => handleSelectSuboption(option.label)}
+                  onClick={() => {
+                    setSelectedSuboption(option.id);
+                    setSelectedGoal(null);
+                  }}
                 >
                   <div className="home-card-icon relative z-10">
                     <Icon size={28} className="sm:h-8 sm:w-8" />
                   </div>
-
                   <div className="relative z-10">
                     <p className="text-sm font-semibold uppercase tracking-wide text-slate-950 sm:text-base">
                       {option.label}
                     </p>
-
                     <p className="mt-1 text-sm normal-case leading-relaxed text-slate-600">
                       {option.description}
                     </p>
@@ -517,7 +202,7 @@ export default function HomeCliente({
             })}
 
             <button
-              onClick={handleRecommendNow}
+              onClick={() => setSelectedGoal('premium')}
               className="home-fade-up home-delay-3 inline-flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-dashed border-white/28 bg-white/10 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-white/16"
             >
               Recomendarme un producto
@@ -538,7 +223,6 @@ export default function HomeCliente({
                   <div className="home-card-icon relative z-10">
                     <Icon size={28} className="sm:h-8 sm:w-8" />
                   </div>
-
                   <div className="relative z-10">
                     <p className="text-sm font-semibold uppercase tracking-wide text-slate-950 sm:text-base">
                       {goal.label}
@@ -551,7 +235,7 @@ export default function HomeCliente({
               );
             })}
           </div>
-        ) : recommendedProducts.length ? (
+        ) : (
           <div className="mb-8 sm:mb-10">
             <article className="overflow-hidden rounded-[28px] border border-white/18 bg-white text-slate-900 shadow-[0_24px_64px_rgba(8,20,52,0.24)]">
               <div
@@ -579,16 +263,12 @@ export default function HomeCliente({
                             alt={product.name}
                             className="h-full w-full object-contain"
                           />
-                        ) : (
-                          <div className="text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                            Tonner
-                          </div>
-                        )}
+                        ) : null}
                       </div>
-
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-tonner-blue/80">
-                          Opción {index + 1} · {product.segment || product.subline || 'Producto recomendado'}
+                          Opción {index + 1} ·{' '}
+                          {product.segment || product.subline || 'Producto recomendado'}
                         </p>
                         <h4 className="mt-2 text-base font-bold uppercase tracking-[0.06em] text-slate-900">
                           {product.name}
@@ -596,21 +276,7 @@ export default function HomeCliente({
                         <p className="mt-2 text-sm leading-relaxed text-slate-600">
                           {product.description}
                         </p>
-
-                        {product.uses?.length ? (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {product.uses.slice(0, 3).map((use) => (
-                              <span
-                                key={use}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600"
-                              >
-                                {use}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
                       </div>
-
                       <button
                         onClick={() => onRecommendProduct(product)}
                         className="inline-flex min-h-11 items-center justify-center rounded-xl bg-tonner-blue px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-tonner-orange sm:min-w-[150px]"
@@ -628,7 +294,6 @@ export default function HomeCliente({
                   >
                     Ver catálogo completo
                   </button>
-
                   <button
                     onClick={onOpenDistributors}
                     className="flex min-h-12 items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold uppercase tracking-wide text-slate-700 transition duration-300 hover:-translate-y-1 hover:bg-slate-100"
@@ -646,30 +311,18 @@ export default function HomeCliente({
               </div>
             </article>
           </div>
-        ) : null}
+        )}
 
         <div className="home-fade-up home-delay-3 flex w-full flex-col gap-4">
           <button
             onClick={onOpenCatalog}
-            className="
-              home-cta-primary flex min-h-12 items-center justify-center gap-3 rounded-xl
-              border border-white/15 px-4 py-3.5 text-sm font-semibold uppercase tracking-wide text-white
-              transition-all duration-300 hover:-translate-y-1 hover:shadow-xl
-              active:scale-[0.97] sm:text-base
-            "
+            className="home-cta-primary flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/15 px-4 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.97] sm:text-base"
           >
             Explorar catálogo
           </button>
-
           <button
             onClick={onOpenDistributors}
-            className="
-              flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/18
-              bg-white/14 px-4 py-3.5 text-sm uppercase tracking-wide text-white/90
-              shadow-[0_10px_26px_rgba(8,20,52,0.16)] backdrop-blur-md transition duration-300
-              hover:-translate-y-1 hover:bg-white/18 hover:shadow-[0_20px_40px_rgba(8,20,52,0.22)]
-              active:scale-[0.97] sm:text-base
-            "
+            className="flex min-h-12 items-center justify-center gap-3 rounded-xl border border-white/18 bg-white/14 px-4 py-3.5 text-sm uppercase tracking-wide text-white/90 shadow-[0_10px_26px_rgba(8,20,52,0.16)] backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:bg-white/18 hover:shadow-[0_20px_40px_rgba(8,20,52,0.22)] active:scale-[0.97] sm:text-base"
           >
             <MapPin size={18} />
             Ver distribuidoras
