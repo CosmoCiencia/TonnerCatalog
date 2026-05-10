@@ -6,5 +6,7 @@ export interface Distributor {
   address: string;
   phone: string;
   email?: string;
-  coordinates: [number, number]; // [latitud, longitud]
+  lat?: number;
+  lng?: number;
+  coordinates?: [number, number]; // [latitud, longitud]
 }

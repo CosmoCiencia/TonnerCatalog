@@ -5,11 +5,17 @@ import type { TonnerLineKey } from '../modules/catalog/tonnerLines';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [activeLine, setActiveLine] = useState<TonnerLineKey | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <>
       {/* HERO */}
-      <HeaderHero activeLine={activeLine} onChangeLine={setActiveLine} />
+      <HeaderHero
+        activeLine={activeLine}
+        onChangeLine={setActiveLine}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+      />
 
       {/* FRANJA BLANCA ESTRUCTURAL */}
       <div className="relative z-30 bg-white">

@@ -4,6 +4,8 @@ export interface ProductAttribute {
   icon?: string;
 }
 
+export type Category = 'Interior' | 'Exterior' | 'Industrial';
+
 export interface ProductTone {
   name: string;
   code?: string;

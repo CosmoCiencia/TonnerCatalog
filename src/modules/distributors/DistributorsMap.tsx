@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { geoMercator, geoPath } from 'd3-geo';
 import { select } from 'd3-selection';
+import 'd3-transition';
 import { zoom, zoomIdentity, type ZoomBehavior } from 'd3-zoom';
 import type { FeatureCollection, Feature, Geometry } from 'geojson';
 import type { Distributor } from './types';

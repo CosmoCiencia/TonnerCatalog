@@ -1,299 +1,270 @@
-import { useEffect, useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Bell, MapPin, PaintBucket } from 'lucide-react';
 
-// Layout
-import HeaderHero from './layout/HeaderHero';
-import TopBar from './layout/TopBar';
-
-// Catalog domain
 import { getProducts } from './modules/catalog/services';
 import type { Product } from './modules/catalog/types';
 import type { TonnerLineKey } from './modules/catalog/tonnerLines';
-
-// Catalog UI
 import ProductCard from './modules/catalog/components/ProductCard';
 import ProductModal from './modules/catalog/components/ProductModal';
-import GuideModal from './modules/catalog/components/GuideModal';
-import HomeScreen from './modules/home/HomeScreen';
-import { DEFAULT_LOCATION, LOCATION_STORAGE_KEY } from './modules/onboarding/location';
-import RoleScreen from './modules/onboarding/RoleScreen';
-import { USER_TYPE_STORAGE_KEY, type UserType } from './modules/onboarding/userTypes';
+import { distributors } from './modules/distributors/distributors.data';
+import StoresMap from './modules/distributors/StoresMap';
 
-// Distributors
-import DistributorsPage from './modules/distributors/DistributorsPage';
+type View = 'catalog' | 'stores' | 'favorites' | 'paint' | 'profile';
+type StoresMode = 'map' | 'list';
 
-// Purchase
-import PurchasePage from './modules/purchase/PurchasePage';
-import { buildInitialOrderItem, type CustomerData, type OrderItem } from './modules/purchase/types';
+const lineTabs: Array<{ label: string; value: TonnerLineKey }> = [
+  { label: 'Arquitectónica', value: 'arquitectonica' },
+  { label: 'Industrial', value: 'industrial' },
+  { label: 'Automotriz', value: 'automotriz' },
+  { label: 'Maderas', value: 'maderas' },
+];
 
-type View = 'role-select' | 'home' | 'catalog' | 'distributors' | 'purchase';
+const navItems: Array<{ label: string; view: View; icon: string }> = [
+  { label: 'Inicio', view: 'catalog', icon: '/icons/INICIO.png' },
+  { label: 'Puntos', view: 'stores', icon: '/icons/TRABAJO.png' },
+  { label: 'Favoritos', view: 'favorites', icon: '/icons/FAVORITOS.png' },
+  { label: 'Pintar', view: 'paint', icon: '/icons/CALCULADORA.png' },
+  { label: 'Perfil', view: 'profile', icon: '/icons/PERFIL.png' },
+];
 
 function App() {
-  const [view, setView] = useState<View>('role-select');
-  const [userType, setUserType] = useState<UserType | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState(DEFAULT_LOCATION);
-
+  const [view, setView] = useState<View>('catalog');
+  const [storesMode, setStoresMode] = useState<StoresMode>('map');
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [activeLine, setActiveLine] = useState<TonnerLineKey>('arquitectonica');
+  const [favoriteProductIds, setFavoriteProductIds] = useState<Set<string>>(() => new Set());
 
-  const [showGuideModal, setShowGuideModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [customerData, setCustomerData] = useState<CustomerData>({
-    name: '',
-    company: '',
-    city: '',
-    notes: '',
-  });
-
-  const [activeLine, setActiveLine] = useState<TonnerLineKey | 'all'>('all');
-
-  // ================= PRODUCTS =================
   useEffect(() => {
     getProducts().then(setProducts);
   }, []);
 
-  // ================= RESTORE USER TYPE =================
-  useEffect(() => {
-    const storedUserType = window.localStorage.getItem(USER_TYPE_STORAGE_KEY) as UserType | null;
-    const storedLocation = window.localStorage.getItem(LOCATION_STORAGE_KEY);
+  const visibleProducts = useMemo(
+    () => products.filter((product) => product.line === activeLine),
+    [activeLine, products],
+  );
 
-    if (
-      storedUserType === 'cliente' ||
-      storedUserType === 'contratista' ||
-      storedUserType === 'distribuidor'
-    ) {
-      setUserType(storedUserType);
+  const favoriteProducts = useMemo(
+    () => products.filter((product) => favoriteProductIds.has(product.id)),
+    [favoriteProductIds, products],
+  );
+
+  const handleToggleFavorite = (product: Product) => {
+    setFavoriteProductIds((currentFavorites) => {
+      const nextFavorites = new Set(currentFavorites);
+
+      if (nextFavorites.has(product.id)) {
+        nextFavorites.delete(product.id);
+      } else {
+        nextFavorites.add(product.id);
+      }
+
+      return nextFavorites;
+    });
+  };
+
+  const handleSelectView = (nextView: View) => {
+    setSelectedProduct(null);
+    setView(nextView);
+  };
+
+  const handleBack = () => {
+    if (selectedProduct) {
+      setSelectedProduct(null);
+      return;
     }
 
-    if (storedLocation) {
-      setSelectedLocation(storedLocation);
-      setCustomerData((current) => ({
-        ...current,
-        city: current.city || storedLocation,
-      }));
+    if (view !== 'catalog') {
+      setView('catalog');
+      return;
     }
-  }, []);
 
-  const safeProducts = products.filter((p): p is Product => Boolean(p));
+    if (window.history.length > 1) {
+      window.history.back();
+    }
+  };
 
-  const filteredProducts = safeProducts.filter((product) => {
-    const matchesLine = activeLine === 'all' ? true : product.line === activeLine;
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-
-    if (!normalizedQuery) return matchesLine;
-
-    const haystack = [
-      product.name,
-      product.category,
-      product.segment,
-      product.subline,
-      product.short_description,
-      product.description,
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-
-    return matchesLine && haystack.includes(normalizedQuery);
-  });
-
-  const primaryActionLabel =
-    userType === 'cliente'
-      ? 'Agregar'
-      : userType === 'contratista'
-        ? 'Agregar al pedido'
-        : 'Agregar referencia';
-
-  const renderActiveView = () => {
-    if (view === 'role-select') {
+  const renderMainContent = () => {
+    if (selectedProduct) {
       return (
-        <RoleScreen
-          onSelectUserType={(nextUserType, nextLocation) => {
-            setUserType(nextUserType);
-            setSelectedLocation(nextLocation);
-            window.localStorage.setItem(USER_TYPE_STORAGE_KEY, nextUserType);
-            window.localStorage.setItem(LOCATION_STORAGE_KEY, nextLocation);
-            setCustomerData((current) => ({
-              ...current,
-              city: nextLocation,
-            }));
-            setView('home');
-          }}
+        <ProductModal
+          product={selectedProduct}
+          userType="contratista"
+          primaryActionLabel="Agregar"
+          onAddToOrder={() => undefined}
+          onClose={() => setSelectedProduct(null)}
         />
       );
     }
 
-    if (view === 'home') {
+    if (view === 'profile') {
       return (
-        <HomeScreen
-          userType={userType ?? 'cliente'}
-          selectedLocation={selectedLocation}
-          onSelectLine={(line) => {
-            setActiveLine(line);
-            setView('catalog');
-          }}
-          onRecommendProduct={(product) => {
-            setActiveLine(product.line as TonnerLineKey);
-            setSelectedProduct(product);
-            setView('catalog');
-          }}
-          onOpenCatalog={() => setView('catalog')}
-          onOpenDistributors={() => setView('distributors')}
-        />
+        <main className="catalog-profile">
+          <section className="catalog-profile__hero">
+            <div className="catalog-profile__avatar" />
+            <strong>LOREM IPSUM</strong>
+          </section>
+          <button className="catalog-profile__link" type="button">
+            Vincular Distribuidora
+          </button>
+          <h1>CONFIGURACIÓN</h1>
+          {[
+            'Mis Datos',
+            'Preferencias',
+            'Términos y Condiciones',
+            'Mis Datos',
+            'Atención al Cliente',
+            'Términos y Condiciones',
+          ].map((item, index) => (
+            <button key={`${item}-${index}`} className="catalog-profile__option" type="button">
+              {item}
+            </button>
+          ))}
+        </main>
+      );
+    }
+
+    if (view === 'stores') {
+      return (
+        <main className="catalog-stores">
+          <nav className="catalog-stores__tabs" aria-label="Vista de puntos de venta">
+            <button
+              type="button"
+              className={storesMode === 'map' ? 'is-active' : ''}
+              onClick={() => setStoresMode('map')}
+            >
+              MAPA
+            </button>
+            <button
+              type="button"
+              className={storesMode === 'list' ? 'is-active' : ''}
+              onClick={() => setStoresMode('list')}
+            >
+              LISTA
+            </button>
+          </nav>
+
+          {storesMode === 'map' ? (
+            <section className="catalog-map-view" aria-label="Mapa de puntos de venta">
+              <StoresMap distributors={distributors} />
+            </section>
+          ) : (
+            <section className="catalog-store-list" aria-label="Lista de puntos de venta">
+              {distributors.map((distributor) => (
+                <article key={distributor.id} className="catalog-store-card">
+                  <div className="catalog-store-card__media" />
+                  <div className="catalog-store-card__content">
+                    <h2>{distributor.name}</h2>
+                    <p>
+                      {distributor.address} · {distributor.city}
+                    </p>
+                    <span>{distributor.email}</span>
+                    <small>{distributor.phone}</small>
+                  </div>
+                </article>
+              ))}
+            </section>
+          )}
+        </main>
+      );
+    }
+
+    if (view === 'paint') {
+      return (
+        <main className="catalog-empty-view">
+          <PaintBucket className="catalog-empty-view__icon" />
+          <h1>TonnerPaints</h1>
+          <p>Abre el simulador para probar colores sobre una foto.</p>
+          <a href="https://tonner-paint.vercel.app/" target="_blank" rel="noopener noreferrer">
+            Abrir simulador
+          </a>
+        </main>
       );
     }
 
     return (
-      <>
-        {view === 'catalog' && (
-          <HeaderHero
-            activeLine={activeLine}
-            orderCount={orderItems.length}
-            onChangeLine={setActiveLine}
-            onOpenPurchase={() => setView('purchase')}
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-          />
-        )}
-
-        <TopBar
-          onGoCatalog={() => setView('catalog')}
-          onGoDistributors={() => setView('distributors')}
-        />
-
-        {view === 'catalog' && (
-          <main className="mx-auto max-w-7xl px-4 py-8 pb-32 md:px-6 md:py-28 md:pb-28">
-            <section className="rounded-[28px] bg-white p-4 shadow-[0_30px_80px_rgba(0,0,0,0.25)] md:rounded-3xl md:p-8">
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onViewDetails={setSelectedProduct}
-                  />
-                ))}
+      <main className="catalog-home">
+        {view === 'favorites' ? <h1 className="catalog-section-title">Favoritos</h1> : null}
+        {view === 'catalog' ? (
+          <>
+            <section className="catalog-hero" aria-label="Destacados">
+              <div className="catalog-hero__dots">
+                <span />
+                <span />
+                <span />
+                <span />
               </div>
             </section>
-          </main>
-        )}
 
-        {view === 'distributors' && <DistributorsPage selectedLocation={selectedLocation} />}
+            <nav className="catalog-tabs" aria-label="Lineas">
+              {lineTabs.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  className={activeLine === tab.value ? 'is-active' : ''}
+                  onClick={() => setActiveLine(tab.value)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </>
+        ) : null}
 
-        {view === 'purchase' && (
-          <PurchasePage
-            userType={userType ?? 'cliente'}
-            orderItems={orderItems}
-            customerData={customerData}
-            onBackToCatalog={() => setView('catalog')}
-            onContinueShopping={() => setView('catalog')}
-            onUpdateItem={(productId, updates) => {
-              setOrderItems((current) =>
-                current.map((item) =>
-                  item.productId === productId ? { ...item, ...updates } : item,
-                ),
-              );
-            }}
-            onRemoveItem={(productId) => {
-              setOrderItems((current) => current.filter((item) => item.productId !== productId));
-            }}
-            onUpdateCustomerData={(field, value) => {
-              setCustomerData((current) => ({
-                ...current,
-                [field]: value,
-              }));
-            }}
-          />
+        {view === 'favorites' && favoriteProducts.length === 0 ? (
+          <section className="catalog-empty-favorites">
+            <h2>Sin favoritos</h2>
+            <p>Marca productos con el corazón para consultarlos más rápido desde esta sección.</p>
+          </section>
+        ) : (
+          <section className="catalog-grid">
+            {(view === 'favorites' ? favoriteProducts : visibleProducts).map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                isFavorite={favoriteProductIds.has(product.id)}
+                onToggleFavorite={handleToggleFavorite}
+                onViewDetails={(nextProduct) => {
+                  setSelectedProduct(nextProduct);
+                  setView('catalog');
+                }}
+              />
+            ))}
+          </section>
         )}
-      </>
+      </main>
     );
   };
 
   return (
-    <div className="min-h-screen bg-tonner-blue overflow-x-hidden">
-      <div key={view} className="app-view-shell app-view-enter">
-        {renderActiveView()}
-      </div>
+    <div className="catalog-app">
+      <header className="catalog-top">
+        <button type="button" className="catalog-top__back" aria-label="Regresar" onClick={handleBack}>
+          <svg viewBox="0 0 64 40" aria-hidden="true">
+            <path d="M4 20 25 5v11h28a7 7 0 0 1 0 14H25v11L4 20Z" />
+          </svg>
+        </button>
+        <img src="/logo.png" alt="Pinturas Tonner" />
+        <button type="button" className="catalog-top__bell" aria-label="Notificaciones">
+          <Bell />
+        </button>
+      </header>
 
-      {/* ================= FLOATING CTA ================= */}
+      {renderMainContent()}
 
-      {view === 'catalog' && (
-        <>
-          {orderItems.length ? (
-            <button
-              onClick={() => setView('purchase')}
-              className="
-                fixed bottom-[7.25rem] left-4
-                rounded-full bg-tonner-blue px-5 py-3
-                text-sm font-semibold text-white shadow-2xl
-                transition hover:bg-tonner-pink
-                z-40
-                md:bottom-6 md:left-6
-              "
-            >
-              Pedido ({orderItems.length})
-            </button>
-          ) : null}
-
+      <nav className="catalog-bottom-nav" aria-label="Navegación principal">
+        {navItems.map((item) => (
           <button
-            onClick={() => setView('distributors')}
-            className="
-              fixed bottom-[7.25rem] right-4
-              bg-tonner-orange
-              hover:bg-tonner-pink
-              text-white
-              text-sm font-semibold
-              py-3 px-5
-              rounded-full
-              shadow-2xl
-              flex items-center gap-2
-              z-40
-              md:bottom-6 md:right-6
-            "
+            key={item.view}
+            type="button"
+            className={!selectedProduct && view === item.view ? 'is-active' : ''}
+            aria-label={item.label}
+            onClick={() => handleSelectView(item.view)}
           >
-            <MapPin className="w-5 h-5" />
-            Distribuidoras
+            {item.view === 'stores' ? <MapPin /> : <img src={item.icon} alt="" />}
           </button>
-        </>
-      )}
-
-      {/* ================= PRODUCT MODAL ================= */}
-
-      <ProductModal
-        product={selectedProduct}
-        userType={userType ?? 'cliente'}
-        primaryActionLabel={primaryActionLabel}
-        onAddToOrder={(product) => {
-          setOrderItems((current) => {
-            const existing = current.find((item) => item.productId === product.id);
-
-            if (existing) {
-              return current.map((item) =>
-                item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item
-              );
-            }
-
-            return [...current, buildInitialOrderItem(product)];
-          });
-
-          setSelectedProduct(null);
-        }}
-        onClose={() => setSelectedProduct(null)}
-      />
-
-      {/* ================= GUIDE MODAL ================= */}
-
-      {showGuideModal && (
-        <GuideModal
-          onSelectLine={(line) => {
-            setActiveLine(line);
-            setShowGuideModal(false);
-            setView('catalog');
-          }}
-          onClose={() => setShowGuideModal(false)}
-        />
-      )}
+        ))}
+      </nav>
     </div>
   );
 }

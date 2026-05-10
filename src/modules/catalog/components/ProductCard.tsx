@@ -1,118 +1,67 @@
+import { Heart } from 'lucide-react';
 import type { Product } from '../types';
-import { TONNER_LINES } from '../tonnerLines';
 
 interface ProductCardProps {
   product: Product;
+  isFavorite?: boolean;
+  onToggleFavorite?: (product: Product) => void;
   onViewDetails?: (product: Product) => void;
 }
 
-export default function ProductCard({ product, onViewDetails }: ProductCardProps) {
-  const line = product.line ? TONNER_LINES[product.line] : null;
+export default function ProductCard({
+  product,
+  isFavorite = false,
+  onToggleFavorite,
+  onViewDetails,
+}: ProductCardProps) {
   const productImage = product.image || product.image_url;
-  const productSubline = product.segment || product.subline;
+  const productColors = product.colors?.length ? product.colors : (product.tones ?? []);
+  const previewColors = productColors.filter((color) => color.hex).slice(0, 3);
+  const subtitle = product.segment || product.subline || product.category || product.presentations?.[0] || '';
 
   return (
-    <article
-      onClick={() => onViewDetails?.(product)}
-      className="
-        relative
-        overflow-hidden
-        flex flex-col
-        cursor-pointer
+    <article className="catalog-product-card" onClick={() => onViewDetails?.(product)}>
+      <div className="catalog-product-card__image">
+        {productImage ? <img src={productImage} alt={product.name} loading="lazy" /> : null}
+      </div>
 
-        rounded-tonner
-        transition-all duration-300
-        hover:-translate-y-1
-        hover:shadow-[0_14px_36px_rgba(29,86,194,0.22)]
+      <div className="catalog-product-card__body">
+        <div>
+          <h2>{product.name}</h2>
+          <span>{subtitle}</span>
+        </div>
 
-        bg-gradient-to-b
-        from-white
-        to-[rgba(29,86,194,0.05)]
+        <button
+          type="button"
+          className={isFavorite ? 'is-active' : ''}
+          aria-label="Favorito"
+          aria-pressed={isFavorite}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleFavorite?.(product);
+          }}
+        >
+          <Heart />
+        </button>
+      </div>
 
-        shadow-[0_10px_28px_rgba(29,86,194,0.18)]
-      "
-    >
-      {/* Gesto superior — depende de la LÍNEA */}
-      <div
-        className={[
-          'absolute top-0 left-0 right-0 h-2 bg-gradient-to-r',
-          line?.gradient ?? 'from-tonner-blue via-tonner-pink to-tonner-orange',
-        ].join(' ')}
-      />
-
-      {/* ZONA DE IMAGEN */}
-      <div
-        className="
-          relative
-          h-36
-          flex items-center justify-center
-          mt-2
-
-          bg-gradient-to-br
-          from-[rgba(29,86,194,0.08)]
-          via-[rgba(161,24,141,0.06)]
-          to-[rgba(29,86,194,0.10)]
-          md:h-44
-          rounded-t-tonner
-        "
-      >
-        {productImage ? (
-          <img
-            src={productImage}
-            alt={product.name}
-            className="h-full w-full object-contain p-4"
-            loading="lazy"
-          />
+      <div className="catalog-product-card__pills" aria-label="Colores disponibles">
+        {previewColors.length ? (
+          previewColors.map((color) => (
+            <span
+              key={`${product.id}-${color.code || color.name}`}
+              title={`${color.code ? `${color.code} · ` : ''}${color.name}`}
+              style={{ backgroundColor: color.hex }}
+            />
+          ))
         ) : (
-          <span
-            className="
-              text-xs
-              uppercase
-              tracking-widest
-              text-tonner-blue/70
-              font-semibold
-            "
-          >
-            Imagen del producto
-          </span>
+          <span className="catalog-product-card__pills-empty">Sin colores</span>
         )}
       </div>
 
-      {/* CONTENIDO (LIMPIO) */}
-      <div className="flex flex-col p-4 pt-4 md:p-6 md:pt-5">
-        {/* Línea oficial + sublínea */}
-        <div className="mb-3 flex items-center gap-2">
-          <span
-            className="
-              text-[11px]
-              font-semibold
-              uppercase
-              tracking-widest
-              text-tonner-blue
-            "
-          >
-            {line?.label ?? product.category}
-          </span>
-
-          {productSubline ? (
-            <span className="text-[11px] uppercase tracking-widest text-tonner-mutedText">
-              • {productSubline}
-            </span>
-          ) : null}
-        </div>
-
-        {/* Nombre */}
-        <h3 className="text-lg font-bold uppercase leading-snug tracking-[0.08em] text-tonner-text md:text-xl">
-          {product.name}
-        </h3>
-
-        {/* Descripción corta */}
-        {product.short_description ? (
-          <p className="mt-2 text-sm normal-case leading-relaxed text-tonner-mutedText line-clamp-2">
-            {product.short_description}
-          </p>
-        ) : null}
-      </div>
+      <button type="button" className="catalog-product-card__cta">
+        VER PRODUCTO
+      </button>
     </article>
   );
 }
